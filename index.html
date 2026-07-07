@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PROFITTO — Dashboards de TV</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  .menu { flex: 1; display: flex; align-items: center; justify-content: center; gap: 2.4vw; }
+  .card2 { width: 24vw; padding: 5vh 2vw; border-radius: 22px; text-align: center; text-decoration: none; color: #23262e;
+    background: #fffdf7; border: 2px solid #ded5bf; box-shadow: 0 4px 14px rgba(35,38,46,0.06);
+    transition: transform .15s ease, border-color .15s ease; }
+  .card2:hover { transform: translateY(-6px); border-color: #a4906a; }
+  .card2 .icon { font-size: 6vh; margin-bottom: 2vh; }
+  .card2 h2 { font-family: 'Poppins', sans-serif; font-size: 2.6vh; margin-bottom: 1vh; }
+  .card2 p { font-size: 1.5vh; color: #8a8170; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="navHost"></div>
+  <div class="menu">
+    <a class="card2" href="captacao.html">
+      <div class="icon">💰</div>
+      <h2>Ranking Captação</h2>
+      <p>Captação líquida do mês por assessor</p>
+    </a>
+    <a class="card2" href="intensidade.html">
+      <div class="icon">⚡</div>
+      <h2>Ranking de Intensidade</h2>
+      <p>Atividade comercial do mês</p>
+    </a>
+    <a class="card2" href="campanha.html">
+      <div class="icon">🏆</div>
+      <h2>Ranking Campanha Semestral</h2>
+      <p>Pontuação acumulada da campanha</p>
+    </a>
+  </div>
+  <div class="footer">Abra cada card em uma TV/aba diferente</div>
+</div>
+<script src="assets.js"></script>
+<script>
+renderNav('');
+startClock('clock');
+setLastUpdate();
+</script>
+</body>
+</html>

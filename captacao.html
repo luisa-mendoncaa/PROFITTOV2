@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ranking Captação — PROFITTO</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+  <div id="navHost"></div>
+  <div id="content" class="simple-table barlist"><div class="loading">Carregando dados da planilha…</div></div>
+  <div class="footer">Fonte: PROFITTO_DAY_v2 · aba admin_total · atualiza a cada 60s</div>
+</div>
+
+<script src="assets.js"></script>
+<script>
+const SHEET_ID = '1IcGygIIk6TUQBf4Vcx-KOtD2RDK5y0dbAcELr_U6KBs';
+const TAB_NAME = 'admin_total';
+const NIVEIS = ['Sênior', 'Pleno', 'Júnior'];
+const COLS_GRID = '5% 26% 38% 14% 17%';
+
+async function load() {
+  try {
+    const rows = await fetchSheetRows(SHEET_ID, TAB_NAME);
+    const data = [];
+    for (const r of rows) {
+      const nivel = (r[2] || '').trim();
+      const nome = (r[1] || '').trim();
+      if (!NIVEIS.includes(nivel) || !nome) continue;
+      const total = parseNumBR(r[5]);
+      const meta = parseNumBR(r[7]);
+      data.push({ nome, nivel, total, meta });
+    }
+    data.sort((a, b) => b.total - a.total);
+
+    const container = document.getElementById('content');
+    container.className = 'simple-table barlist';
+
+    let html = '<div class="simple-row head" style="grid-template-columns:' + COLS_GRID + '">' +
+      '<div class="cell pos-cell">#</div>' +
+      '<div class="cell name-cell">ASSESSOR</div>' +
+      '<div class="cell bar-cell">ANDAMENTO DA META</div>' +
+      '<div class="cell meta-cell">META</div>' +
+      '<div class="cell num-cell">REAL</div>' +
+      '</div>';
+
+    data.forEach((d, i) => {
+      const pos = i + 1;
+      const rankCls = pos === 1 ? ' gold' : pos === 2 ? ' silver' : pos === 3 ? ' bronze' : '';
+      const valCls = d.total >= 0 ? 'pos-val' : 'neg-val';
+      html += '<div class="simple-row" style="grid-template-columns:' + COLS_GRID + '">' +
+        '<div class="cell pos-cell' + rankCls + '">' + pos + '</div>' +
+        '<div class="cell name-cell">' + d.nome + '<span class="lvl">' + d.nivel + '</span></div>' +
+        '<div class="cell bar-cell">' + progressBar(d.total, d.meta) + '</div>' +
+        '<div class="cell meta-cell"><div class="lbl">META</div><div class="val">' + fmtBRLShort(d.meta) + '</div></div>' +
+        '<div class="cell num-cell ' + valCls + '">' + fmtBRLShort(d.total) + '</div>' +
+        '</div>';
+    });
+
+    container.innerHTML = html;
+    setLastUpdate();
+  } catch (err) {
+    document.getElementById('content').innerHTML =
+      '<div class="error-box">⚠️ Não foi possível carregar os dados.<br><small>' + err.message + '</small><br><small>Verifique se a planilha está compartilhada como "Qualquer pessoa com o link – Leitor".</small></div>';
+  }
+}
+
+renderNav('captacao');
+startClock('clock');
+load();
+setInterval(load, 60000);
+setTimeout(() => location.reload(), 6 * 60 * 60 * 1000);
+</script>
+</body>
+</html>

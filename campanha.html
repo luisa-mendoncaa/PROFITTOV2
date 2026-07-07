@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ranking Campanha Semestral — PROFITTO</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+  <div id="navHost"></div>
+  <div class="section-title">RANKING CAMPANHA SEMESTRAL</div>
+  <div id="content" class="simple-table wide"><div class="loading">Carregando dados da planilha…</div></div>
+  <div class="footer">Fonte: MURAL CAMPANHA PROFITTO · aba Mural · atualiza a cada 60s</div>
+</div>
+
+<script src="assets.js"></script>
+<script>
+const SHEET_ID = '1lbha7HVi6x3SRHepAAjK28DmgPLiHODfIkilLHCHOIc';
+const TAB_NAME = 'Mural';
+const COLS_GRID = '4% 15% 7% 8% 8% 8% 8% 8% 7% 8% 8% 11%';
+
+function cell(v, extraClass) {
+  return '<div class="cell ' + (extraClass || 'txt-cell') + '">' + (v === '' ? '-' : v) + '</div>';
+}
+
+async function load() {
+  try {
+    const rows = await fetchSheetRows(SHEET_ID, TAB_NAME);
+    const data = [];
+    for (const r of rows) {
+      const nome = (r[1] || '').trim();
+      const status = (r[3] || '').trim();
+      if (!nome || status === '' || status === 'Status') continue;
+      data.push({
+        nome,
+        time: (r[2] || '-').trim(),
+        status,
+        intensidade: (r[4] || '-').trim(),
+        captacao: (r[5] || '-').trim(),
+        pj1: (r[6] || '-').trim(),
+        pj2: (r[7] || '-').trim(),
+        extra: (r[8] || '-').trim(),
+        mesAtual: (r[9] || '-').trim(),
+        historico: (r[10] || '-').trim(),
+        acumulado: (r[11] || '-').trim(),
+        acumuladoNum: parseNumBR(r[11])
+      });
+    }
+    data.sort((a, b) => b.acumuladoNum - a.acumuladoNum);
+
+    const container = document.getElementById('content');
+    container.className = 'simple-table wide';
+    container.style.display = 'flex';
+    container.style.flexDirection = 'column';
+
+    let html = '<div class="simple-row head" style="grid-template-columns:' + COLS_GRID + '">' +
+      '<div class="cell pos-cell">#</div>' +
+      '<div class="cell txt-cell">NOME</div>' +
+      '<div class="cell txt-cell">TIME</div>' +
+      '<div class="cell txt-cell">STATUS</div>' +
+      '<div class="cell num-cell">INTENSIDADE</div>' +
+      '<div class="cell num-cell">CAPTAÇÃO</div>' +
+      '<div class="cell num-cell">RECEITA PJ1</div>' +
+      '<div class="cell num-cell">RECEITA PJ2</div>' +
+      '<div class="cell num-cell">EXTRA</div>' +
+      '<div class="cell num-cell">MÊS ATUAL</div>' +
+      '<div class="cell num-cell">HISTÓRICO</div>' +
+      '<div class="cell num-cell">ACUMULADO</div>' +
+      '</div>';
+
+    data.forEach((d, i) => {
+      const accCls = 'num-cell strong ' + (d.acumuladoNum >= 0 ? 'pos-val' : 'neg-val');
+      html += '<div class="simple-row" style="grid-template-columns:' + COLS_GRID + '">' +
+        '<div class="cell pos-cell">' + (i + 1) + '</div>' +
+        '<div class="cell name-cell">' + d.nome + '</div>' +
+        cell(d.time) + cell(d.status) +
+        cell(d.intensidade, 'num-cell') +
+        cell(d.captacao, 'num-cell') +
+        cell(d.pj1, 'num-cell') +
+        cell(d.pj2, 'num-cell') +
+        cell(d.extra, 'num-cell') +
+        cell(d.mesAtual, 'num-cell') +
+        cell(d.historico, 'num-cell') +
+        cell(d.acumulado, accCls) +
+        '</div>';
+    });
+
+    container.innerHTML = html;
+    setLastUpdate();
+  } catch (err) {
+    document.getElementById('content').innerHTML =
+      '<div class="error-box">⚠️ Não foi possível carregar os dados.<br><small>' + err.message + '</small><br><small>Verifique se a planilha está compartilhada como "Qualquer pessoa com o link – Leitor".</small></div>';
+  }
+}
+
+renderNav('campanha');
+startClock('clock');
+load();
+setInterval(load, 60000);
+setTimeout(() => location.reload(), 6 * 60 * 60 * 1000);
+</script>
+</body>
+</html>
