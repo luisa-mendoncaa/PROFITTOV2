@@ -51,9 +51,9 @@ async function load() {
       const valCls = d.total >= 0 ? 'pos-val' : 'neg-val';
       html += '<div class="simple-row" style="grid-template-columns:' + COLS_GRID + '">' +
         '<div class="cell pos-cell' + rankCls + '">' + pos + '</div>' +
-        '<div class="cell name-cell">' + d.nome + '<span class="lvl">' + d.nivel + '</span></div>' +
+        '<div class="cell name-cell"><span class="nm">' + d.nome + '</span><span class="lvl">' + d.nivel + '</span></div>' +
         '<div class="cell bar-cell">' + progressBar(d.total, d.meta) + '</div>' +
-        '<div class="cell meta-cell"><div class="lbl">META</div><div class="val">' + fmtBRLShort(d.meta) + '</div></div>' +
+        '<div class="cell meta-cell"><div class="val">' + fmtBRLShort(d.meta) + '</div></div>' +
         '<div class="cell num-cell ' + valCls + '">' + fmtBRLShort(d.total) + '</div>' +
         '</div>';
     });
