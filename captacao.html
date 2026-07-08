@@ -9,6 +9,7 @@
 <body>
 <div class="wrap">
   <div id="navHost"></div>
+  <div class="cap-total-bar"><span class="cap-total-lbl">CAP TOTAL</span><span class="cap-total-val" id="capTotal">--</span></div>
   <div id="content" class="simple-table barlist"><div class="loading">Carregando dados da planilha…</div></div>
   <div class="footer">Fonte: PROFITTO_DAY_v2 · aba admin_total · atualiza a cada 60s</div>
 </div>
@@ -33,6 +34,11 @@ async function load() {
       data.push({ nome, nivel, total, meta });
     }
     data.sort((a, b) => b.total - a.total);
+
+    const capTotal = data.reduce((s, d) => s + d.total, 0);
+    const capTotalEl = document.getElementById('capTotal');
+    capTotalEl.textContent = fmtBRLShort(capTotal);
+    capTotalEl.style.color = capTotal >= 0 ? '#3d7a37' : '#b8372a';
 
     const container = document.getElementById('content');
     container.className = 'simple-table barlist';
@@ -59,7 +65,13 @@ async function load() {
     });
 
     container.innerHTML = html;
-    setLastUpdate();
+
+    try {
+      const stamp = await fetchSheetCell(SHEET_ID, TAB_NAME, 'H1', 8000);
+      setLastUpdate(stamp);
+    } catch (e) {
+      setLastUpdate();
+    }
   } catch (err) {
     document.getElementById('content').innerHTML =
       '<div class="error-box">⚠️ Não foi possível carregar os dados.<br><small>' + err.message + '</small><br><small>Verifique se a planilha está compartilhada como "Qualquer pessoa com o link – Leitor".</small></div>';
@@ -70,7 +82,7 @@ renderNav('captacao');
 startClock('clock');
 load();
 setInterval(load, 60000);
-setTimeout(() => location.reload(), 1 * 60 * 60 * 1000);
+setTimeout(() => location.reload(), 6 * 60 * 60 * 1000);
 </script>
 </body>
 </html>
