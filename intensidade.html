@@ -9,7 +9,13 @@
 <body>
 <div class="wrap">
   <div id="navHost"></div>
-  <div class="section-title">RANKING DE INTENSIDADE</div>
+  <div class="section-title-row">
+    <div class="section-title">RANKING DE INTENSIDADE</div>
+    <div class="filter-toggle">
+      <button class="filter-btn" data-sort="dia">MAIS INTENSOS HOJE</button>
+      <button class="filter-btn active" data-sort="mes">MÉDIA MÊS</button>
+    </div>
+  </div>
   <div id="content" class="simple-table"><div class="loading">Carregando dados da planilha…</div></div>
   <div class="footer">Fonte: MURAL CAMPANHA PROFITTO · aba TV - Intensidade · atualiza a cada 60s</div>
 </div>
@@ -18,6 +24,28 @@
 <script>
 const SHEET_ID = '1lbha7HVi6x3SRHepAAjK28DmgPLiHODfIkilLHCHOIc';
 const TAB_NAME = 'TV - Intensidade';
+
+let lastData = [];
+let sortKey = 'mes';
+
+function render() {
+  const data = lastData.slice().sort((a, b) => b[sortKey] - a[sortKey]);
+  const container = document.getElementById('content');
+  container.innerHTML =
+    '<div class="simple-row head"><div class="cell pos-cell">#</div><div class="cell name-cell">NOME</div><div class="cell num-cell">DIA</div><div class="cell num-cell">MÊS</div></div>';
+  container.className = 'simple-table';
+
+  data.forEach((d, i) => {
+    const row = document.createElement('div');
+    row.className = 'simple-row';
+    row.innerHTML =
+      '<div class="cell pos-cell">' + (i + 1) + '</div>' +
+      '<div class="cell name-cell">' + d.nome + '</div>' +
+      '<div class="cell num-cell' + (sortKey === 'dia' ? ' sort-active' : '') + '">' + fmtNum(d.dia, 2) + '</div>' +
+      '<div class="cell num-cell' + (sortKey === 'mes' ? ' sort-active' : '') + '">' + fmtNum(d.mes, 0) + '</div>';
+    container.appendChild(row);
+  });
+}
 
 async function load() {
   try {
@@ -30,30 +58,22 @@ async function load() {
       const mes = parseNumBR(r[3]);
       data.push({ nome, dia, mes });
     });
-    data.sort((a, b) => b.mes - a.mes);
-
-    const container = document.getElementById('content');
-    container.innerHTML =
-      '<div class="simple-row head"><div class="cell pos-cell">#</div><div class="cell name-cell">NOME</div><div class="cell num-cell">DIA</div><div class="cell num-cell">MÊS</div></div>';
-    container.className = 'simple-table';
-
-    data.forEach((d, i) => {
-      const row = document.createElement('div');
-      row.className = 'simple-row';
-      row.innerHTML =
-        '<div class="cell pos-cell">' + (i + 1) + '</div>' +
-        '<div class="cell name-cell">' + d.nome + '</div>' +
-        '<div class="cell num-cell">' + fmtNum(d.dia, 2) + '</div>' +
-        '<div class="cell num-cell">' + fmtNum(d.mes, 0) + '</div>';
-      container.appendChild(row);
-    });
-
+    lastData = data;
+    render();
     setLastUpdate();
   } catch (err) {
     document.getElementById('content').innerHTML =
       '<div class="error-box">⚠️ Não foi possível carregar os dados.<br><small>' + err.message + '</small><br><small>Verifique se a planilha está compartilhada como "Qualquer pessoa com o link – Leitor".</small></div>';
   }
 }
+
+document.querySelectorAll('.filter-btn').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    sortKey = btn.dataset.sort;
+    document.querySelectorAll('.filter-btn').forEach((b) => b.classList.toggle('active', b === btn));
+    render();
+  });
+});
 
 renderNav('intensidade');
 startClock('clock');
