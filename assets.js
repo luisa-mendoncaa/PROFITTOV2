@@ -69,7 +69,7 @@ function renderNav(active) {
   ).join('');
   host.innerHTML =
     '<div class="topbar">' +
-    '  <div class="brand"><span class="logo-badge">P</span><div class="brand-text"><span class="logo">PROFITTO</span><span class="partner">BTG PACTUAL</span></div></div>' +
+    '  <div class="brand"><img class="brand-logo" src="logo.png?v=1" alt="PROFITTO · BTG Pactual"></div>' +
     '  <div class="navtabs">' + tabsHtml + '</div>' +
     '  <div class="meta"><div class="clock" id="clock">--</div><div class="upd">ÚLTIMA ATUALIZAÇÃO<br><b id="lastUpdate">--</b></div></div>' +
     '</div>';
