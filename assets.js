@@ -134,6 +134,59 @@ function fetchSheetRows(sheetId, tabName, timeoutMs) {
   });
 }
 
+/* Busca o valor de UMA célula específica (ex: 'H1') de uma aba do Google Sheets, via a mesma
+   técnica JSONP. Usada para puxar carimbos de data/hora escritos manualmente na planilha (ex:
+   "última atualização"), em vez do horário do navegador. */
+function fetchSheetCell(sheetId, tabName, range, timeoutMs) {
+  return new Promise((resolve, reject) => {
+    const cbName = '__gvizCb_' + Math.random().toString(36).slice(2);
+    const scriptId = cbName + '_s';
+    let finished = false;
+
+    function cleanup() {
+      try { delete window[cbName]; } catch (e) { window[cbName] = undefined; }
+      const s = document.getElementById(scriptId);
+      if (s) s.remove();
+    }
+
+    window[cbName] = function (response) {
+      finished = true;
+      cleanup();
+      try {
+        if (!response || response.status === 'error') {
+          reject(new Error('Erro ao consultar célula'));
+          return;
+        }
+        const rows = response.table.rows || [];
+        const cell = rows[0] && rows[0].c && rows[0].c[0];
+        if (!cell) { resolve(''); return; }
+        const val = (cell.f !== undefined && cell.f !== null) ? cell.f : (cell.v !== undefined && cell.v !== null ? cell.v : '');
+        resolve(String(val));
+      } catch (e) {
+        reject(e);
+      }
+    };
+
+    const script = document.createElement('script');
+    script.id = scriptId;
+    script.src = 'https://docs.google.com/spreadsheets/d/' + sheetId + '/gviz/tq?tqx=out:json;responseHandler:' + cbName +
+      '&sheet=' + encodeURIComponent(tabName) + '&range=' + encodeURIComponent(range) + '&_=' + Date.now();
+    script.onerror = function () {
+      if (finished) return;
+      cleanup();
+      reject(new Error('Não foi possível carregar a célula.'));
+    };
+    document.body.appendChild(script);
+
+    setTimeout(function () {
+      if (!finished) {
+        cleanup();
+        reject(new Error('Tempo esgotado ao buscar célula.'));
+      }
+    }, timeoutMs || 15000);
+  });
+}
+
 function medal(pos) {
   if (pos === 1) return '🥇';
   if (pos === 2) return '🥈';
@@ -141,9 +194,13 @@ function medal(pos) {
   return pos;
 }
 
-function setLastUpdate() {
+function setLastUpdate(customText) {
   const el = document.getElementById('lastUpdate');
   if (!el) return;
+  if (customText && customText.trim() !== '') {
+    el.textContent = customText.trim();
+    return;
+  }
   const d = new Date();
   const dd = String(d.getDate()).padStart(2, '0');
   const mm = String(d.getMonth() + 1).padStart(2, '0');
