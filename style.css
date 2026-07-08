@@ -14,12 +14,12 @@ html, body {
 
 /* ---------- Navegação / topo ---------- */
 .topbar {
-  display: flex; align-items: center; justify-content: space-between;
+  display: flex; align-items: center; justify-content: flex-start;
   padding-bottom: 1.6vh; margin-bottom: 2vh;
   border-bottom: 3px solid #ded5bf;
 }
 
-.brand { display: flex; align-items: center; gap: 0.9vw; }
+.brand { display: flex; align-items: center; gap: 0.9vw; flex-shrink: 0; }
 .logo-badge {
   width: 5.2vh; height: 5.2vh; border-radius: 50%; background: #23262e; color: #f2ede2;
   display: flex; align-items: center; justify-content: center; font-family: 'Poppins', sans-serif;
@@ -29,7 +29,7 @@ html, body {
 .brand-text .logo { font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 2.6vh; letter-spacing: 0.03em; color: #23262e; }
 .brand-text .partner { font-size: 1.15vh; letter-spacing: 0.22em; color: #a4906a; font-weight: 700; }
 
-.navtabs { display: flex; gap: 0.8vw; }
+.navtabs { display: flex; gap: 0.8vw; margin-left: 3vw; }
 .navtab {
   text-decoration: none; color: #6b6252; font-family: 'Poppins', sans-serif; font-weight: 700;
   font-size: 1.7vh; letter-spacing: 0.06em; padding: 1.4vh 2vw; border-radius: 999px;
@@ -38,16 +38,34 @@ html, body {
 .navtab:hover { background: rgba(164,144,106,0.12); }
 .navtab.active { background: #a4906a; color: #fff8ec; box-shadow: 0 4px 14px rgba(164,144,106,0.4); }
 
-.meta { text-align: right; }
+.meta { text-align: right; margin-left: auto; flex-shrink: 0; }
 .meta .clock { font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 2.6vh; color: #23262e; }
 .meta .upd { font-size: 1.1vh; letter-spacing: 0.1em; color: #9a9184; margin-top: 0.4vh; }
 .meta .upd b { color: #4a4436; font-size: 1.35vh; }
+
+/* ---------- Selo CAP TOTAL, embutido na topbar (Captação) — não rouba altura da tabela ---------- */
+.cap-total-badge {
+  display: flex; align-items: center; gap: 0.9vw; flex-shrink: 0; margin-left: 2.4vw;
+  background: #23262e; border-radius: 14px; padding: 1.1vh 1.8vw;
+  box-shadow: 0 4px 14px rgba(35,38,46,0.18);
+}
+.cap-total-lbl { font-family: 'Poppins', sans-serif; font-size: 1.7vh; font-weight: 800; letter-spacing: 0.18em; color: #d8cfbb; }
+.cap-total-val { font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 4.6vh; line-height: 1; color: #fff; }
 
 /* ---------- Título de seção ---------- */
 .section-title {
   font-size: 1.6vh; font-weight: 800; letter-spacing: 0.18em; color: #8a8170;
   margin-bottom: 1.6vh;
 }
+
+/* Cabeçalho da tabela clicável para ordenar (Intensidade: DIA / MÊS) */
+.simple-row.head .sort-head { cursor: pointer; user-select: none; display: flex; align-items: center; justify-content: center; gap: 0.4vw; }
+.simple-row.head .sort-head .sort-arrow { font-size: 1.1vh; color: #8a8170; transition: color .15s ease, transform .15s ease; }
+.simple-row.head .sort-head:hover .sort-arrow { color: #d8cfbb; }
+.simple-row.head .sort-head.active { color: #a4906a; }
+.simple-row.head .sort-head.active .sort-arrow { color: #a4906a; transform: scale(1.25); }
+
+.simple-row .num-cell.sort-active { color: #a4906a; }
 
 /* ---------- Grid de cards ---------- */
 .cardgrid { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.4vh 1.4vw; overflow: hidden; }
@@ -128,9 +146,10 @@ html, body {
 .simple-row .pos-cell.bronze { color: #a5673a; }
 
 /* Variante lista com barra de andamento (Captação) */
-.simple-table.barlist .name-cell { display: flex; flex-direction: column; justify-content: center; line-height: 1.15; overflow: hidden; }
+.simple-table.barlist .name-cell { display: flex; flex-direction: row; align-items: baseline; gap: 0.7vw; overflow: hidden; }
 .simple-table.barlist .simple-row:not(.head) .name-cell { font-size: 3vh; }
-.simple-table.barlist .name-cell .lvl { font-size: 0.95vh; font-weight: 400; letter-spacing: 0.1em; color: #a49b8c; text-transform: uppercase; margin-top: 0.15vh; line-height: 1; }
+.simple-table.barlist .name-cell .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.simple-table.barlist .name-cell .lvl { flex-shrink: 0; font-size: 1.05vh; font-weight: 400; letter-spacing: 0.08em; color: #a49b8c; text-transform: uppercase; }
 .simple-table.barlist .bar-cell { padding: 0 1.6vw; }
 .simple-table.barlist .bar-track { height: 1.8vh; margin: 0; }
 .simple-table.barlist .bar-dot { width: 2vh; height: 2vh; }
