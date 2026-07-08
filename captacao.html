@@ -9,7 +9,6 @@
 <body>
 <div class="wrap">
   <div id="navHost"></div>
-  <div class="cap-total-bar"><span class="cap-total-lbl">CAP TOTAL</span><span class="cap-total-val" id="capTotal">--</span></div>
   <div id="content" class="simple-table barlist"><div class="loading">Carregando dados da planilha…</div></div>
   <div class="footer">Fonte: PROFITTO_DAY_v2 · aba admin_total · atualiza a cada 60s</div>
 </div>
@@ -21,8 +20,19 @@ const TAB_NAME = 'admin_total';
 const NIVEIS = ['Sênior', 'Pleno', 'Júnior'];
 const COLS_GRID = '5% 26% 38% 14% 17%';
 
+function mountCapTotalBadge() {
+  const topbar = document.querySelector('.topbar');
+  const meta = document.querySelector('.meta');
+  if (!topbar || !meta || document.getElementById('capTotal')) return;
+  const badge = document.createElement('div');
+  badge.className = 'cap-total-badge';
+  badge.innerHTML = '<span class="cap-total-lbl">CAP TOTAL</span><span class="cap-total-val" id="capTotal">--</span>';
+  topbar.insertBefore(badge, meta);
+}
+
 async function load() {
   try {
+    mountCapTotalBadge();
     const rows = await fetchSheetRows(SHEET_ID, TAB_NAME);
     const data = [];
     for (const r of rows) {
@@ -38,7 +48,7 @@ async function load() {
     const capTotal = data.reduce((s, d) => s + d.total, 0);
     const capTotalEl = document.getElementById('capTotal');
     capTotalEl.textContent = fmtBRLShort(capTotal);
-    capTotalEl.style.color = capTotal >= 0 ? '#3d7a37' : '#b8372a';
+    capTotalEl.style.color = capTotal >= 0 ? '#7ed957' : '#ff7a68';
 
     const container = document.getElementById('content');
     container.className = 'simple-table barlist';
@@ -82,7 +92,7 @@ renderNav('captacao');
 startClock('clock');
 load();
 setInterval(load, 60000);
-setTimeout(() => location.reload(), 1 * 60 * 60 * 1000);
+setTimeout(() => location.reload(), 6 * 60 * 60 * 1000);
 </script>
 </body>
 </html>
