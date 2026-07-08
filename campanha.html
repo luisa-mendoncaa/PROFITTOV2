@@ -95,3 +95,11 @@ async function load() {
 }
 
 renderNav('campa
+nha');
+  startClock('clock');
+  load();
+  setInterval(load, 60000);
+  setTimeout(() => location.reload(), 6 * 60 * 60 * 1000);
+</script>
+</body>
+</html>
