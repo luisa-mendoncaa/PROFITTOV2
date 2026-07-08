@@ -20,6 +20,7 @@ html, body {
 }
 
 .brand { display: flex; align-items: center; gap: 0.9vw; flex-shrink: 0; }
+.brand-logo { height: 4.8vh; width: auto; display: block; }
 .logo-badge {
   width: 5.2vh; height: 5.2vh; border-radius: 50%; background: #23262e; color: #f2ede2;
   display: flex; align-items: center; justify-content: center; font-family: 'Poppins', sans-serif;
