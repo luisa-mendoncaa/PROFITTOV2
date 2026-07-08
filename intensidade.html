@@ -22,11 +22,18 @@ const TAB_NAME = 'TV - Intensidade';
 let lastData = [];
 let sortKey = 'mes';
 
+function headCell(label, key) {
+  const active = sortKey === key;
+  return '<div class="cell num-cell sort-head' + (active ? ' active' : '') + '" data-sort="' + key + '">' +
+    label + '<span class="sort-arrow">▾</span></div>';
+}
+
 function render() {
   const data = lastData.slice().sort((a, b) => b[sortKey] - a[sortKey]);
   const container = document.getElementById('content');
   container.innerHTML =
-    '<div class="simple-row head"><div class="cell pos-cell">#</div><div class="cell name-cell">NOME</div><div class="cell num-cell">DIA</div><div class="cell num-cell">MÊS</div></div>';
+    '<div class="simple-row head"><div class="cell pos-cell">#</div><div class="cell name-cell">NOME</div>' +
+    headCell('DIA', 'dia') + headCell('MÊS', 'mes') + '</div>';
   container.className = 'simple-table';
 
   data.forEach((d, i) => {
@@ -40,6 +47,13 @@ function render() {
     container.appendChild(row);
   });
 }
+
+document.getElementById('content').addEventListener('click', (e) => {
+  const head = e.target.closest('.sort-head');
+  if (!head) return;
+  sortKey = head.dataset.sort;
+  render();
+});
 
 async function load() {
   try {
@@ -60,14 +74,6 @@ async function load() {
       '<div class="error-box">⚠️ Não foi possível carregar os dados.<br><small>' + err.message + '</small><br><small>Verifique se a planilha está compartilhada como "Qualquer pessoa com o link – Leitor".</small></div>';
   }
 }
-
-document.querySelectorAll('.filter-btn').forEach((btn) => {
-  btn.addEventListener('click', () => {
-    sortKey = btn.dataset.sort;
-    document.querySelectorAll('.filter-btn').forEach((b) => b.classList.toggle('active', b === btn));
-    render();
-  });
-});
 
 renderNav('intensidade');
 startClock('clock');
