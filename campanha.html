@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ranking Campanha Semestral — PROFITTO</title>
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=2">
 </head>
 <body>
 <div class="wrap">
@@ -14,7 +14,7 @@
   <div class="footer">Fonte: MURAL CAMPANHA PROFITTO · aba Mural · atualiza a cada 60s</div>
 </div>
 
-<script src="assets.js"></script>
+<script src="assets.js?v=2"></script>
 <script>
 const SHEET_ID = '1lbha7HVi6x3SRHepAAjK28DmgPLiHODfIkilLHCHOIc';
 const TAB_NAME = 'Mural';
@@ -98,7 +98,7 @@ renderNav('campanha');
 startClock('clock');
 load();
 setInterval(load, 60000);
-setTimeout(() => location.reload(), 6 * 60 * 60 * 1000);
+setTimeout(() => location.reload(), 1 * 60 * 60 * 1000);
 </script>
 </body>
 </html>
