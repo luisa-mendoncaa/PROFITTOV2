@@ -9,13 +9,7 @@
 <body>
 <div class="wrap">
   <div id="navHost"></div>
-  <div class="section-title-row">
-    <div class="section-title">RANKING DE INTENSIDADE</div>
-    <div class="filter-toggle">
-      <button class="filter-btn" data-sort="dia">MAIS INTENSOS HOJE</button>
-      <button class="filter-btn active" data-sort="mes">MÉDIA MÊS</button>
-    </div>
-  </div>
+  <div class="section-title">RANKING DE INTENSIDADE</div>
   <div id="content" class="simple-table"><div class="loading">Carregando dados da planilha…</div></div>
   <div class="footer">Fonte: MURAL CAMPANHA PROFITTO · aba TV - Intensidade · atualiza a cada 60s</div>
 </div>
@@ -79,7 +73,7 @@ renderNav('intensidade');
 startClock('clock');
 load();
 setInterval(load, 60000);
-setTimeout(() => location.reload(), 6 * 60 * 60 * 1000);
+setTimeout(() => location.reload(), 1 * 60 * 60 * 1000);
 </script>
 </body>
 </html>
