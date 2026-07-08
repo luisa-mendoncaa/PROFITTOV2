@@ -45,7 +45,7 @@ html, body {
 
 /* ---------- Selo CAP TOTAL, embutido na topbar (Captação) — não rouba altura da tabela ---------- */
 .cap-total-badge {
-  display: flex; align-items: center; gap: 0.9vw; flex-shrink: 0; margin-left: 2.4vw;
+  display: flex; align-items: center; gap: 0.9vw; flex-shrink: 0; margin-left: 6vw;
   background: #23262e; border-radius: 14px; padding: 1.1vh 1.8vw;
   box-shadow: 0 4px 14px rgba(35,38,46,0.18);
 }
