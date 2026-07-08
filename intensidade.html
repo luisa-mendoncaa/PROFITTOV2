@@ -18,6 +18,8 @@
 <script>
 const SHEET_ID = '1lbha7HVi6x3SRHepAAjK28DmgPLiHODfIkilLHCHOIc';
 const TAB_NAME = 'TV - Intensidade';
+  const UPDATE_SHEET_ID = '1IcGygIIk6TUQBf4Vcx-KOtD2RDK5y0dbAcELr_U6KBs';
+  const UPDATE_TAB_NAME = 'admin_total';
 
 let lastData = [];
 let sortKey = 'mes';
@@ -68,7 +70,12 @@ async function load() {
     });
     lastData = data;
     render();
-    setLastUpdate();
+    try {
+            const stamp = await fetchSheetCell(UPDATE_SHEET_ID, UPDATE_TAB_NAME, 'H1', 8000);
+            setLastUpdate(stamp);
+    } catch (e) {
+            setLastUpdate();
+    }
   } catch (err) {
     document.getElementById('content').innerHTML =
       '<div class="error-box">⚠️ Não foi possível carregar os dados.<br><small>' + err.message + '</small><br><small>Verifique se a planilha está compartilhada como "Qualquer pessoa com o link – Leitor".</small></div>';
