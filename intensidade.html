@@ -5,8 +5,55 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ranking de Intensidade — PROFITTO</title>
 <link rel="stylesheet" href="style.css?v=4">
+<style>
+  #celebrationOverlay {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .celebration-banner {
+    background: linear-gradient(135deg, #ffd700, #ff6b6b);
+    color: #111;
+    font-weight: 900;
+    font-size: clamp(1.4rem, 4vw, 2.6rem);
+    padding: 24px 48px;
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0,0,0,.45);
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    animation: bannerPop 3.6s ease forwards;
+    max-width: 90vw;
+  }
+  @keyframes bannerPop {
+    0%   { opacity: 0; transform: scale(.4) translateY(60px); }
+    12%  { opacity: 1; transform: scale(1.12) translateY(0); }
+    20%  { transform: scale(1); }
+    85%  { opacity: 1; }
+    100% { opacity: 0; transform: scale(.9) translateY(-30px); }
+  }
+  .balloon {
+    position: fixed;
+    bottom: -80px;
+    font-size: 3rem;
+    pointer-events: none;
+    z-index: 9998;
+    animation-name: balloonRise;
+    animation-timing-function: ease-in;
+    animation-fill-mode: forwards;
+  }
+  @keyframes balloonRise {
+    0%   { transform: translateY(0) translateX(0) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(-115vh) translateX(var(--drift, 20px)) rotate(15deg); opacity: 0; }
+  }
+</style>
 </head>
 <body>
+<div id="celebrationOverlay"></div>
 <div class="wrap">
   <div id="navHost"></div>
   <div class="section-title">RANKING DE INTENSIDADE</div>
@@ -15,11 +62,14 @@
 </div>
 
 <script src="assets.js?v=4"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
 <script>
 const SHEET_ID = '1lbha7HVi6x3SRHepAAjK28DmgPLiHODfIkilLHCHOIc';
 const TAB_NAME = 'TV - Intensidade';
   const UPDATE_SHEET_ID = '1IcGygIIk6TUQBf4Vcx-KOtD2RDK5y0dbAcELr_U6KBs';
   const UPDATE_TAB_NAME = 'admin_total';
+
+const STORAGE_KEY = 'profitto_intensidade_snapshot';
 
 let lastData = [];
 let sortKey = 'mes';
@@ -57,6 +107,117 @@ document.getElementById('content').addEventListener('click', (e) => {
   render();
 });
 
+// ---------- Celebração (confete, balões, som) ----------
+
+function getPrevSnapshot() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) { return null; }
+}
+
+function saveSnapshot(data) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (e) {}
+}
+
+function spawnBalloons(count) {
+  const emojis = ['🎈', '🎉', '🎊'];
+  for (let i = 0; i < count; i++) {
+    const b = document.createElement('div');
+    b.className = 'balloon';
+    b.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+    b.style.left = Math.random() * 100 + 'vw';
+    b.style.setProperty('--drift', (Math.random() * 200 - 100) + 'px');
+    b.style.animationDuration = (3 + Math.random() * 2) + 's';
+    b.style.animationDelay = (Math.random() * 0.6) + 's';
+    document.body.appendChild(b);
+    setTimeout(() => b.remove(), 6500);
+  }
+}
+
+function fireConfetti() {
+  if (typeof confetti !== 'function') return;
+  const end = Date.now() + 2000;
+  (function frame() {
+    confetti({ particleCount: 6, angle: 60, spread: 70, origin: { x: 0 } });
+    confetti({ particleCount: 6, angle: 120, spread: 70, origin: { x: 1 } });
+    if (Date.now() < end) requestAnimationFrame(frame);
+  })();
+  confetti({ particleCount: 120, spread: 100, origin: { y: 0.5 } });
+}
+
+let audioCtx;
+function playCheerSound() {
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const notes = [523.25, 659.25, 783.99, 1046.5];
+    notes.forEach((freq, i) => {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.value = freq;
+      const start = audioCtx.currentTime + i * 0.12;
+      gain.gain.setValueAtTime(0, start);
+      gain.gain.linearRampToValueAtTime(0.25, start + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, start + 0.5);
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.start(start);
+      osc.stop(start + 0.55);
+    });
+  } catch (e) {}
+}
+
+function showCelebrationBanner(text) {
+  const overlay = document.getElementById('celebrationOverlay');
+  const banner = document.createElement('div');
+  banner.className = 'celebration-banner';
+  banner.textContent = text;
+  overlay.innerHTML = '';
+  overlay.appendChild(banner);
+  setTimeout(() => banner.remove(), 3600);
+}
+
+async function runCelebrations(celebrations) {
+  for (const c of celebrations) {
+    let text = c.nome.toUpperCase();
+    if (c.deltaDia > 0 && c.deltaMes > 0) {
+      text += '  +' + c.deltaDia + '/+' + c.deltaMes + ' PONTOS';
+    } else if (c.deltaDia > 0) {
+      text += '  +' + c.deltaDia + ' PONTOS (DIA)';
+    } else {
+      text += '  +' + c.deltaMes + ' PONTOS (MÊS)';
+    }
+    showCelebrationBanner(text);
+    fireConfetti();
+    spawnBalloons(14);
+    playCheerSound();
+    await new Promise((r) => setTimeout(r, 3800));
+  }
+}
+
+function checkForCelebrations(newData) {
+  const prev = getPrevSnapshot();
+  if (prev && prev.length) {
+    const prevMap = {};
+    prev.forEach((p) => { prevMap[p.nome] = p; });
+    const celebrations = [];
+    newData.forEach((d) => {
+      const old = prevMap[d.nome];
+      if (!old) return;
+      const deltaDia = Math.round((d.dia - old.dia) * 100) / 100;
+      const deltaMes = Math.round(d.mes - old.mes);
+      if (deltaDia > 0 || deltaMes > 0) {
+        celebrations.push({ nome: d.nome, deltaDia, deltaMes });
+      }
+    });
+    if (celebrations.length) runCelebrations(celebrations);
+  }
+  saveSnapshot(newData);
+}
+
+// ---------- Carregamento ----------
+
 async function load() {
   try {
     const rows = await fetchSheetRows(SHEET_ID, TAB_NAME);
@@ -68,6 +229,7 @@ async function load() {
       const mes = parseNumBR(r[3]);
       data.push({ nome, dia, mes });
     });
+    checkForCelebrations(data);
     lastData = data;
     render();
     try {
