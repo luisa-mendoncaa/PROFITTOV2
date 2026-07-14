@@ -55,7 +55,12 @@
   /* Tabela de 3 colunas (# | NOME | VALOR) em vez de 4 */
   #table-dia .simple-row,
   #table-mes .simple-row {
-    grid-template-columns: 10% 1fr 22% !important;
+    grid-template-columns: 10% 1fr 28% !important;
+  }
+  /* Impede quebra de linha no cabeçalho */
+  #table-dia .simple-row.head .num-cell,
+  #table-mes .simple-row.head .num-cell {
+    white-space: nowrap;
   }
 </style>
 </head>
