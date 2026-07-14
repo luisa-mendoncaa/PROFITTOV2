@@ -39,17 +39,9 @@
   }
   @media (max-width: 700px) { .intensity-grid { grid-template-columns: 1fr; } }
 
-  /* ---- Filtro ---- */
-  .filter-wrap { padding: 6px 0 4px; }
-  .filter-wrap input {
-    width: 100%; box-sizing: border-box;
-    background: transparent;
-    border: 1px solid rgba(255,255,255,0.15);
-    border-radius: 6px; color: inherit;
-    font-size: 0.75rem; padding: 4px 8px;
-    outline: none; font-family: inherit;
-  }
-  .filter-wrap input::placeholder { opacity: 0.35; }
+  /* ---- Linhas compactas para caber todos na tela ---- */
+  .simple-row { padding-top: 2px !important; padding-bottom: 2px !important; min-height: 0 !important; }
+  .cell { font-size: 0.78rem !important; padding-top: 4px !important; padding-bottom: 4px !important; }
 </style>
 </head>
 <body>
@@ -60,11 +52,9 @@
 
   <div class="intensity-grid">
     <div>
-      <div class="filter-wrap"><input type="text" id="filter-dia" placeholder="Filtrar por nome…"></div>
       <div id="table-dia" class="simple-table"></div>
     </div>
     <div>
-      <div class="filter-wrap"><input type="text" id="filter-mes" placeholder="Filtrar por nome…"></div>
       <div id="table-mes" class="simple-table"></div>
     </div>
   </div>
@@ -114,12 +104,9 @@ function buildTable(containerId, filterId, valueKey, labelKey, decimals) {
 }
 
 function renderAll() {
-  buildTable('table-dia', 'filter-dia', 'dia', 'DIA', 2);
-  buildTable('table-mes', 'filter-mes', 'mes', 'MÊS', 0);
+  buildTable('table-dia', null, 'dia', 'DIA', 2);
+  buildTable('table-mes', null, 'mes', 'MÊS', 0);
 }
-
-document.getElementById('filter-dia').addEventListener('input', renderAll);
-document.getElementById('filter-mes').addEventListener('input', renderAll);
 
 // ---------- Celebração ----------
 
