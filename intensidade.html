@@ -6,6 +6,7 @@
 <title>Ranking de Intensidade — PROFITTO</title>
 <link rel="stylesheet" href="style.css?v=4">
 <style>
+  /* ---- Celebração ---- */
   #celebrationOverlay {
     position: fixed;
     inset: 0;
@@ -36,6 +37,61 @@
     85%  { opacity: 1; }
     100% { opacity: 0; transform: scale(.9) translateY(-30px); }
   }
+
+  /* ---- Grid dos dois quadrados ---- */
+  .intensity-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-top: 18px;
+  }
+  @media (max-width: 700px) {
+    .intensity-grid { grid-template-columns: 1fr; }
+  }
+  .intensity-card {
+    background: var(--card-bg, #1a1a2e);
+    border: 1px solid var(--border, #2e2e4a);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .intensity-card-title {
+    text-align: center;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    padding: 12px 0 10px;
+    border-bottom: 1px solid var(--border, #2e2e4a);
+    color: var(--accent, #e0c97f);
+    text-transform: uppercase;
+  }
+  .intensity-card .simple-table { margin: 0; border: none; background: transparent; }
+  .intensity-card .simple-row { border-bottom: 1px solid var(--border, #2e2e4a); }
+  .intensity-card .simple-row:last-child { border-bottom: none; }
+
+  /* ---- Filtro ---- */
+  .filter-row {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border, #2e2e4a);
+  }
+  .filter-row input {
+    flex: 1;
+    background: transparent;
+    border: 1px solid var(--border, #2e2e4a);
+    border-radius: 6px;
+    color: inherit;
+    font-size: 0.75rem;
+    padding: 4px 8px;
+    outline: none;
+  }
+  .filter-row input::placeholder { opacity: 0.4; }
+
+  /* ---- Ordenação ---- */
+  .sort-head { cursor: pointer; user-select: none; }
+  .sort-head.active { color: var(--accent, #e0c97f); }
+  .sort-arrow { margin-left: 4px; opacity: 0.5; font-size: 0.7em; }
+  .sort-head.active .sort-arrow { opacity: 1; }
 </style>
 </head>
 <body>
@@ -43,7 +99,27 @@
 <div class="wrap">
   <div id="navHost"></div>
   <div class="section-title">RANKING DE INTENSIDADE</div>
-  <div id="content" class="simple-table"><div class="loading">Carregando dados da planilha…</div></div>
+
+  <div class="intensity-grid">
+    <!-- QUADRADO 1: INTENSIDADE DIÁRIA -->
+    <div class="intensity-card">
+      <div class="intensity-card-title">Intensidade Diária</div>
+      <div class="filter-row">
+        <input type="text" id="filter-dia" placeholder="Filtrar por nome…" />
+      </div>
+      <div id="table-dia" class="simple-table"></div>
+    </div>
+
+    <!-- QUADRADO 2: MÉDIA MENSAL -->
+    <div class="intensity-card">
+      <div class="intensity-card-title">Média Mensal</div>
+      <div class="filter-row">
+        <input type="text" id="filter-mes" placeholder="Filtrar por nome…" />
+      </div>
+      <div id="table-mes" class="simple-table"></div>
+    </div>
+  </div>
+
   <div class="footer">Fonte: MURAL CAMPANHA PROFITTO · aba TV - Intensidade · atualiza a cada 60s</div>
 </div>
 
@@ -52,27 +128,28 @@
 <script>
 const SHEET_ID = '1lbha7HVi6x3SRHepAAjK28DmgPLiHODfIkilLHCHOIc';
 const TAB_NAME = 'TV - Intensidade';
-  const UPDATE_SHEET_ID = '1IcGygIIk6TUQBf4Vcx-KOtD2RDK5y0dbAcELr_U6KBs';
-  const UPDATE_TAB_NAME = 'admin_total';
-
+const UPDATE_SHEET_ID = '1IcGygIIk6TUQBf4Vcx-KOtD2RDK5y0dbAcELr_U6KBs';
+const UPDATE_TAB_NAME = 'admin_total';
 const STORAGE_KEY = 'profitto_intensidade_snapshot';
 
 let lastData = [];
-let sortKey = 'dia';
 
-function headCell(label, key) {
-  const active = sortKey === key;
-  return '<div class="cell num-cell sort-head' + (active ? ' active' : '') + '" data-sort="' + key + '">' +
-    label + '<span class="sort-arrow">▾</span></div>';
-}
+// ---------- Render dos quadrados ----------
 
-function render() {
-  const data = lastData.slice().sort((a, b) => b[sortKey] - a[sortKey]);
-  const container = document.getElementById('content');
+function renderCard(containerId, filterId, valueKey, labelKey, decimals) {
+  const filterVal = document.getElementById(filterId).value.trim().toLowerCase();
+  let data = lastData
+    .filter(d => !filterVal || d.nome.toLowerCase().includes(filterVal))
+    .slice()
+    .sort((a, b) => b[valueKey] - a[valueKey]);
+
+  const container = document.getElementById(containerId);
   container.innerHTML =
-    '<div class="simple-row head"><div class="cell pos-cell">#</div><div class="cell name-cell">NOME</div>' +
-    headCell('DIA', 'dia') + headCell('MÊS', 'mes') + '</div>';
-  container.className = 'simple-table';
+    '<div class="simple-row head">' +
+    '<div class="cell pos-cell">#</div>' +
+    '<div class="cell name-cell">NOME</div>' +
+    '<div class="cell num-cell sort-head active">' + labelKey + '<span class="sort-arrow">▾</span></div>' +
+    '</div>';
 
   data.forEach((d, i) => {
     const row = document.createElement('div');
@@ -80,18 +157,18 @@ function render() {
     row.innerHTML =
       '<div class="cell pos-cell">' + (i + 1) + '</div>' +
       '<div class="cell name-cell">' + d.nome + '</div>' +
-      '<div class="cell num-cell' + (sortKey === 'dia' ? ' sort-active' : '') + '">' + fmtNum(d.dia, 2) + '</div>' +
-      '<div class="cell num-cell' + (sortKey === 'mes' ? ' sort-active' : '') + '">' + fmtNum(d.mes, 0) + '</div>';
+      '<div class="cell num-cell sort-active">' + fmtNum(d[valueKey], decimals) + '</div>';
     container.appendChild(row);
   });
 }
 
-document.getElementById('content').addEventListener('click', (e) => {
-  const head = e.target.closest('.sort-head');
-  if (!head) return;
-  sortKey = head.dataset.sort;
-  render();
-});
+function renderAll() {
+  renderCard('table-dia', 'filter-dia', 'dia', 'DIA', 2);
+  renderCard('table-mes', 'filter-mes', 'mes', 'MÊS', 0);
+}
+
+document.getElementById('filter-dia').addEventListener('input', renderAll);
+document.getElementById('filter-mes').addEventListener('input', renderAll);
 
 // ---------- Celebração (confete, balões, som) ----------
 
@@ -120,7 +197,6 @@ function spawnBalloons(count) {
       'z-index:2147483647;pointer-events:none;opacity:1;' +
       'transform:translateY(0) translateX(0) rotate(0deg);will-change:transform,opacity;';
     document.body.appendChild(b);
-
     setTimeout(() => {
       const start = performance.now();
       function step(now) {
@@ -234,15 +310,15 @@ async function load() {
     });
     checkForCelebrations(data);
     lastData = data;
-    render();
+    renderAll();
     try {
-            const stamp = await fetchSheetCell(UPDATE_SHEET_ID, UPDATE_TAB_NAME, 'H1', 8000);
-            setLastUpdate(stamp);
+      const stamp = await fetchSheetCell(UPDATE_SHEET_ID, UPDATE_TAB_NAME, 'H1', 8000);
+      setLastUpdate(stamp);
     } catch (e) {
-            setLastUpdate();
+      setLastUpdate();
     }
   } catch (err) {
-    document.getElementById('content').innerHTML =
+    document.getElementById('table-dia').innerHTML =
       '<div class="error-box">⚠️ Não foi possível carregar os dados.<br><small>' + err.message + '</small><br><small>Verifique se a planilha está compartilhada como "Qualquer pessoa com o link – Leitor".</small></div>';
   }
 }
