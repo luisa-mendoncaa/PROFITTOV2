@@ -39,9 +39,15 @@
   }
   @media (max-width: 700px) { .intensity-grid { grid-template-columns: 1fr; } }
 
-  /* ---- Linhas compactas para caber todos na tela ---- */
-  .simple-row { padding-top: 2px !important; padding-bottom: 2px !important; min-height: 0 !important; }
-  .cell { font-size: 0.78rem !important; padding-top: 4px !important; padding-bottom: 4px !important; }
+  /* ---- Tabela ocupa a altura disponível e escala as linhas ---- */
+  html, body { height: 100%; }
+  .wrap { display: flex; flex-direction: column; height: 100vh; box-sizing: border-box; }
+  .intensity-grid { flex: 1; min-height: 0; }
+  .intensity-grid > div { display: flex; flex-direction: column; height: 100%; }
+  #table-dia, #table-mes { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  #table-dia .simple-row, #table-mes .simple-row { flex: 1; min-height: 0; }
+  /* font ligeiramente menor via variável, ajustada pelo JS */
+  #table-dia .cell, #table-mes .cell { font-size: var(--row-fs, 0.92rem) !important; padding-top: var(--row-py, 5px) !important; padding-bottom: var(--row-py, 5px) !important; }
 </style>
 </head>
 <body>
@@ -106,6 +112,25 @@ function buildTable(containerId, filterId, valueKey, labelKey, decimals) {
 function renderAll() {
   buildTable('table-dia', null, 'dia', 'DIA', 2);
   buildTable('table-mes', null, 'mes', 'MÊS', 0);
+  autoScale();
+}
+
+function autoScale() {
+  // Mede a altura disponível e o número de linhas, ajusta font e padding
+  requestAnimationFrame(() => {
+    const table = document.getElementById('table-dia');
+    if (!table) return;
+    const rows = table.querySelectorAll('.simple-row');
+    if (!rows.length) return;
+    const available = table.parentElement.getBoundingClientRect().height;
+    const rowCount = rows.length; // inclui header
+    const targetRowH = available / rowCount;
+    // Estimativa: font ~60% da altura da linha, padding = restante / 2
+    const fs = Math.min(0.92, Math.max(0.6, targetRowH * 0.55 / 16));
+    const py = Math.max(2, (targetRowH - fs * 16) / 2);
+    document.documentElement.style.setProperty('--row-fs', fs + 'rem');
+    document.documentElement.style.setProperty('--row-py', py + 'px');
+  });
 }
 
 // ---------- Celebração ----------
