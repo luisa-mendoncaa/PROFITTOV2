@@ -8,27 +8,19 @@
 <style>
   /* ---- Celebração ---- */
   #celebrationOverlay {
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 2147483647;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    position: fixed; inset: 0; pointer-events: none;
+    z-index: 2147483647; display: flex;
+    align-items: center; justify-content: center;
   }
   .celebration-banner {
     background: linear-gradient(135deg, #ffd700, #ff6b6b);
-    color: #111;
-    font-weight: 900;
+    color: #111; font-weight: 900;
     font-size: clamp(1.4rem, 4vw, 2.6rem);
-    padding: 24px 48px;
-    border-radius: 20px;
+    padding: 24px 48px; border-radius: 20px;
     box-shadow: 0 10px 40px rgba(0,0,0,.45);
-    text-align: center;
-    text-transform: uppercase;
+    text-align: center; text-transform: uppercase;
     letter-spacing: 1px;
-    animation: bannerPop 3.6s ease forwards;
-    max-width: 90vw;
+    animation: bannerPop 3.6s ease forwards; max-width: 90vw;
   }
   @keyframes bannerPop {
     0%   { opacity: 0; transform: scale(.4) translateY(60px); }
@@ -38,34 +30,26 @@
     100% { opacity: 0; transform: scale(.9) translateY(-30px); }
   }
 
-  /* ---- Dois painéis lado a lado ---- */
+  /* ---- Layout dois painéis ---- */
   .intensity-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 20px;
     margin-top: 12px;
   }
-  @media (max-width: 700px) {
-    .intensity-grid { grid-template-columns: 1fr; }
-  }
+  @media (max-width: 700px) { .intensity-grid { grid-template-columns: 1fr; } }
 
-  /* ---- Filtro (mínimo, sem alterar o visual do painel) ---- */
-  .filter-row {
-    padding: 6px 8px;
-  }
-  .filter-row input {
-    width: 100%;
-    box-sizing: border-box;
+  /* ---- Filtro ---- */
+  .filter-wrap { padding: 6px 0 4px; }
+  .filter-wrap input {
+    width: 100%; box-sizing: border-box;
     background: transparent;
     border: 1px solid rgba(255,255,255,0.15);
-    border-radius: 6px;
-    color: inherit;
-    font-size: 0.75rem;
-    padding: 4px 8px;
-    outline: none;
-    font-family: inherit;
+    border-radius: 6px; color: inherit;
+    font-size: 0.75rem; padding: 4px 8px;
+    outline: none; font-family: inherit;
   }
-  .filter-row input::placeholder { opacity: 0.35; }
+  .filter-wrap input::placeholder { opacity: 0.35; }
 </style>
 </head>
 <body>
@@ -75,14 +59,13 @@
   <div class="section-title">RANKING DE INTENSIDADE</div>
 
   <div class="intensity-grid">
-    <!-- PAINEL: INTENSIDADE DIÁRIA -->
     <div>
-      <div id="table-dia" class="simple-table"><div class="loading">Carregando…</div></div>
+      <div class="filter-wrap"><input type="text" id="filter-dia" placeholder="Filtrar por nome…"></div>
+      <div id="table-dia" class="simple-table"></div>
     </div>
-
-    <!-- PAINEL: MÉDIA MENSAL -->
     <div>
-      <div id="table-mes" class="simple-table"><div class="loading">Carregando…</div></div>
+      <div class="filter-wrap"><input type="text" id="filter-mes" placeholder="Filtrar por nome…"></div>
+      <div id="table-mes" class="simple-table"></div>
     </div>
   </div>
 
@@ -92,79 +75,78 @@
 <script src="assets.js?v=4"></script>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
 <script>
-const SHEET_ID = '1lbha7HVi6x3SRHepAAjK28DmgPLiHODfIkilLHCHOIc';
-const TAB_NAME = 'TV - Intensidade';
+const SHEET_ID        = '1lbha7HVi6x3SRHepAAjK28DmgPLiHODfIkilLHCHOIc';
+const TAB_NAME        = 'TV - Intensidade';
 const UPDATE_SHEET_ID = '1IcGygIIk6TUQBf4Vcx-KOtD2RDK5y0dbAcELr_U6KBs';
 const UPDATE_TAB_NAME = 'admin_total';
-const STORAGE_KEY = 'profitto_intensidade_snapshot';
+const STORAGE_KEY     = 'profitto_intensidade_snapshot';
 
 let lastData = [];
 
 // ---------- Render ----------
 
-function renderCard(containerId, filterId, valueKey, labelKey, decimals) {
-  const filterVal = filterId ? document.getElementById(filterId).value.trim().toLowerCase() : '';
-  let data = lastData
+function buildTable(containerId, filterId, valueKey, labelKey, decimals) {
+  const filterEl = document.getElementById(filterId);
+  const filterVal = filterEl ? filterEl.value.trim().toLowerCase() : '';
+  const data = lastData
     .filter(d => !filterVal || d.nome.toLowerCase().includes(filterVal))
     .slice()
     .sort((a, b) => b[valueKey] - a[valueKey]);
 
   const container = document.getElementById(containerId);
-  container.innerHTML =
-    '<div class="filter-row"><input type="text" id="' + filterId + '" placeholder="Filtrar por nome…" /></div>' +
+  let html =
     '<div class="simple-row head">' +
       '<div class="cell pos-cell">#</div>' +
       '<div class="cell name-cell">NOME</div>' +
-      '<div class="cell num-cell sort-head active" style="cursor:default">' + labelKey + '</div>' +
+      '<div class="cell num-cell sort-head active">' + labelKey + '<span class="sort-arrow">▾</span></div>' +
     '</div>';
 
   data.forEach((d, i) => {
-    const row = document.createElement('div');
-    row.className = 'simple-row';
-    row.innerHTML =
-      '<div class="cell pos-cell">' + (i + 1) + '</div>' +
-      '<div class="cell name-cell">' + d.nome + '</div>' +
-      '<div class="cell num-cell sort-active">' + fmtNum(d[valueKey], decimals) + '</div>';
-    container.appendChild(row);
+    html +=
+      '<div class="simple-row">' +
+        '<div class="cell pos-cell">' + (i + 1) + '</div>' +
+        '<div class="cell name-cell">' + d.nome + '</div>' +
+        '<div class="cell num-cell sort-active">' + fmtNum(d[valueKey], decimals) + '</div>' +
+      '</div>';
   });
 
-  document.getElementById(filterId).addEventListener('input', renderAll);
+  container.innerHTML = html;
 }
 
 function renderAll() {
-  renderCard('table-dia', 'filter-dia', 'dia', 'DIA', 2);
-  renderCard('table-mes', 'filter-mes', 'mes', 'MÊS', 0);
+  buildTable('table-dia', 'filter-dia', 'dia', 'DIA', 2);
+  buildTable('table-mes', 'filter-mes', 'mes', 'MÊS', 0);
 }
+
+document.getElementById('filter-dia').addEventListener('input', renderAll);
+document.getElementById('filter-mes').addEventListener('input', renderAll);
 
 // ---------- Celebração ----------
 
 function getPrevSnapshot() {
-  try { const raw = localStorage.getItem(STORAGE_KEY); return raw ? JSON.parse(raw) : null; } catch (e) { return null; }
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || null; } catch(e) { return null; }
 }
 function saveSnapshot(data) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (e) {}
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch(e) {}
 }
 
 function spawnBalloons(count) {
-  const emojis = ['🎈', '🎉', '🎊'];
+  const emojis = ['🎈','🎉','🎊'];
   for (let i = 0; i < count; i++) {
     const b = document.createElement('div');
     b.textContent = emojis[Math.floor(Math.random() * emojis.length)];
-    const startX = Math.random() * 100;
-    const drift = Math.random() * 200 - 100;
-    const duration = 3000 + Math.random() * 2000;
-    const delay = Math.random() * 500;
-    b.style.cssText = 'position:fixed;left:' + startX + 'vw;bottom:-80px;font-size:3rem;z-index:2147483647;pointer-events:none;opacity:1;';
+    const startX = Math.random() * 100, drift = Math.random() * 200 - 100;
+    const duration = 3000 + Math.random() * 2000, delay = Math.random() * 500;
+    b.style.cssText = 'position:fixed;left:' + startX + 'vw;bottom:-80px;font-size:3rem;z-index:2147483647;pointer-events:none;';
     document.body.appendChild(b);
     setTimeout(() => {
       const start = performance.now();
-      function step(now) {
+      (function step(now) {
         const t = Math.min(1, (now - start) / duration);
-        b.style.transform = 'translateY(' + (-115 * t) + 'vh) translateX(' + (drift * t) + 'px) rotate(' + (15 * t) + 'deg)';
+        b.style.transform = 'translateY(' + (-115*t) + 'vh) translateX(' + (drift*t) + 'px) rotate(' + (15*t) + 'deg)';
         b.style.opacity = String(1 - t);
         if (t < 1) requestAnimationFrame(step); else b.remove();
-      }
-      requestAnimationFrame(step);
+      })(performance.now());
     }, delay);
   }
 }
@@ -173,7 +155,7 @@ function fireConfetti() {
   if (typeof confetti !== 'function') return;
   const end = Date.now() + 2000;
   (function frame() {
-    confetti({ particleCount: 6, angle: 60, spread: 70, origin: { x: 0 } });
+    confetti({ particleCount: 6, angle: 60,  spread: 70, origin: { x: 0 } });
     confetti({ particleCount: 6, angle: 120, spread: 70, origin: { x: 1 } });
     if (Date.now() < end) requestAnimationFrame(frame);
   })();
@@ -186,8 +168,7 @@ function playCheerSound() {
     audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
     if (audioCtx.state === 'suspended') audioCtx.resume();
     [523.25, 659.25, 783.99, 1046.5].forEach((freq, i) => {
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
+      const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
       osc.type = 'triangle'; osc.frequency.value = freq;
       const s = audioCtx.currentTime + i * 0.12;
       gain.gain.setValueAtTime(0, s);
@@ -196,12 +177,12 @@ function playCheerSound() {
       osc.connect(gain).connect(audioCtx.destination);
       osc.start(s); osc.stop(s + 0.55);
     });
-  } catch (e) {}
+  } catch(e) {}
 }
 
 function showCelebrationBanner(text) {
   const overlay = document.getElementById('celebrationOverlay');
-  const banner = document.createElement('div');
+  const banner  = document.createElement('div');
   banner.className = 'celebration-banner';
   banner.textContent = text;
   overlay.innerHTML = '';
@@ -209,17 +190,15 @@ function showCelebrationBanner(text) {
   setTimeout(() => banner.remove(), 3600);
 }
 
-async function runCelebrations(celebrations) {
-  for (const c of celebrations) {
+async function runCelebrations(list) {
+  for (const c of list) {
     let text = c.nome.toUpperCase();
-    if (c.deltaDia > 0 && c.deltaMes > 0)  text += '  +' + c.deltaDia + '/+' + c.deltaMes + ' PONTOS';
-    else if (c.deltaDia > 0)                text += '  +' + c.deltaDia + ' PONTOS (DIA)';
-    else                                    text += '  +' + c.deltaMes + ' PONTOS (MÊS)';
+    if      (c.deltaDia > 0 && c.deltaMes > 0) text += '  +' + c.deltaDia + '/+' + c.deltaMes + ' PONTOS';
+    else if (c.deltaDia > 0)                    text += '  +' + c.deltaDia + ' PONTOS (DIA)';
+    else                                        text += '  +' + c.deltaMes + ' PONTOS (MÊS)';
     showCelebrationBanner(text);
-    fireConfetti();
-    spawnBalloons(14);
-    playCheerSound();
-    await new Promise((r) => setTimeout(r, 3800));
+    fireConfetti(); spawnBalloons(14); playCheerSound();
+    await new Promise(r => setTimeout(r, 3800));
   }
 }
 
@@ -227,16 +206,16 @@ function checkForCelebrations(newData) {
   const prev = getPrevSnapshot();
   if (prev && prev.length) {
     const prevMap = {};
-    prev.forEach((p) => { prevMap[p.nome] = p; });
-    const celebrations = [];
-    newData.forEach((d) => {
+    prev.forEach(p => { prevMap[p.nome] = p; });
+    const list = [];
+    newData.forEach(d => {
       const old = prevMap[d.nome];
       if (!old) return;
       const deltaDia = Math.round((d.dia - old.dia) * 100) / 100;
       const deltaMes = Math.round(d.mes - old.mes);
-      if (deltaDia > 0 || deltaMes > 0) celebrations.push({ nome: d.nome, deltaDia, deltaMes });
+      if (deltaDia > 0 || deltaMes > 0) list.push({ nome: d.nome, deltaDia, deltaMes });
     });
-    if (celebrations.length) runCelebrations(celebrations);
+    if (list.length) runCelebrations(list);
   }
   saveSnapshot(newData);
 }
@@ -247,7 +226,7 @@ async function load() {
   try {
     const rows = await fetchSheetRows(SHEET_ID, TAB_NAME);
     const data = [];
-    rows.forEach((r) => {
+    rows.forEach(r => {
       const nome = (r[1] || '').trim();
       if (!nome || nome === 'ASSESSOR') return;
       data.push({ nome, dia: parseNumBR(r[2]), mes: parseNumBR(r[3]) });
@@ -258,8 +237,8 @@ async function load() {
     try {
       const stamp = await fetchSheetCell(UPDATE_SHEET_ID, UPDATE_TAB_NAME, 'H1', 8000);
       setLastUpdate(stamp);
-    } catch (e) { setLastUpdate(); }
-  } catch (err) {
+    } catch(e) { setLastUpdate(); }
+  } catch(err) {
     document.getElementById('table-dia').innerHTML =
       '<div class="error-box">⚠️ Não foi possível carregar os dados.<br><small>' + err.message + '</small></div>';
   }
