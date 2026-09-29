@@ -5,20 +5,61 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ranking Captação — PROFITTO</title>
 <link rel="stylesheet" href="style.css?v=4">
+<style>
+  /* ===== Mural de captação — colunas novas ===== */
+  .cap-mural .pct-cell { display:flex; flex-direction:column; gap:6px; justify-content:center; }
+  .cap-mural .pct-val  { font-weight:700; font-variant-numeric:tabular-nums; }
+  .cap-mural .pct-bar  { height:6px; border-radius:3px; background:rgba(255,255,255,.08); overflow:hidden; }
+  .cap-mural .pct-bar > i { display:block; height:100%; border-radius:3px; }
+  .cap-mural .num-cell, .cap-mural .pct-val { font-variant-numeric:tabular-nums; }
+
+  .cap-mural .form-cell { display:flex; align-items:center; justify-content:flex-end; gap:6px; }
+  .cap-mural .head .form-cell,
+  .cap-mural .head .pct-cell { justify-content:center; }
+
+  .sig { width:18px; height:18px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center;
+         font-size:11px; font-weight:800; line-height:1; color:#fff; flex:0 0 auto; }
+  .sig.ok   { background:#1fa55a; }                 /* >= 100%          */
+  .sig.mid  { background:#e0b43a; color:#3a2c00; }  /* 50–99%           */
+  .sig.no   { background:#e8837a; }                 /* 0–49%            */
+  .sig.neg  { background:#c0362c; font-size:9px; }  /* captação negativa */
+  .sig.na   { background:transparent; border:1.5px dashed rgba(255,255,255,.25); color:transparent; }
+  /* último mês em destaque, como no Brasileirão */
+  .sig.last { width:24px; height:24px; font-size:13px; box-shadow:0 0 0 2px #0000, 0 0 0 3px currentColor; }
+  .sig.ok.last  { color:#fff; box-shadow:0 0 0 2px rgba(0,0,0,.35), 0 0 0 4px #1fa55a; }
+  .sig.mid.last { color:#3a2c00; box-shadow:0 0 0 2px rgba(0,0,0,.35), 0 0 0 4px #e0b43a; }
+  .sig.no.last  { color:#fff; box-shadow:0 0 0 2px rgba(0,0,0,.35), 0 0 0 4px #e8837a; }
+  .sig.neg.last { color:#fff; font-size:11px; box-shadow:0 0 0 2px rgba(0,0,0,.35), 0 0 0 4px #c0362c; }
+  .sig.na.last  { box-shadow:none; }
+
+  .form-legend { display:flex; gap:18px; justify-content:flex-end; align-items:center; flex-wrap:wrap;
+                 margin:12px 4px 0; font-size:12px; opacity:.75; }
+  .form-legend span { display:inline-flex; align-items:center; gap:6px; }
+  .form-legend .sig { width:14px; height:14px; font-size:9px; }
+</style>
 </head>
 <body>
 <div class="wrap">
   <div id="navHost"></div>
-  <div id="content" class="simple-table barlist"><div class="loading">Carregando dados da planilha…</div></div>
-  <div class="footer">Fonte: PROFITTO_DAY_v2 · aba admin_total · atualiza a cada 60s</div>
+  <div id="content" class="simple-table barlist cap-mural"><div class="loading">Carregando dados da planilha…</div></div>
+  <div id="legendHost"></div>
+  <div class="footer">Fonte: PROFITTO_DAY_v2 · abas admin_total e hist_captacao · atualiza a cada 60s</div>
 </div>
 
 <script src="assets.js?v=4"></script>
 <script>
-const SHEET_ID = '1IcGygIIk6TUQBf4Vcx-KOtD2RDK5y0dbAcELr_U6KBs';
-const TAB_NAME = 'admin_total';
-const NIVEIS = ['Sênior', 'Pleno', 'Júnior'];
-const COLS_GRID = '5% 26% 38% 14% 17%';
+const SHEET_ID  = '1IcGygIIk6TUQBf4Vcx-KOtD2RDK5y0dbAcELr_U6KBs';
+const TAB_NAME  = 'admin_total';
+const HIST_TAB  = 'hist_captacao';   // A=Assessor | B=Cluster | C=Filial | D..=meses (jan./26…) | Total | Média
+const NIVEIS    = ['Sênior', 'Pleno', 'Júnior'];
+const COLS_GRID = '5% 27% 18% 22% 28%';
+const N_MESES   = 5;
+
+// Faixas (mesma régua do Quadro da Equipe)
+const LIM_BATIDA = 100;   // >= 100%      → verde ✓
+const LIM_MEIO   = 50;    // 50–99%       → amarelo –
+                          // 0–49%        → vermelho claro ✕
+                          // captação < 0 → vermelho ▼
 
 function mountCapTotalBadge() {
   const topbar = document.querySelector('.topbar');
@@ -30,51 +71,158 @@ function mountCapTotalBadge() {
   topbar.insertBefore(badge, meta);
 }
 
+// ---------- helpers ----------
+const normName = s => (s || '').toString().normalize('NFD').replace(/[̀-ͯ]/g, '')
+  .replace(/\(.*?\)/g, '').trim().toLowerCase().replace(/\s+/g, ' ');
+const escHtml  = s => (s || '').toString().replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+
+// Lê "5863064.50", "-829.00", "R$ 1.234.567,89", "(R$ 188.906)", "-R$ 486.912,75"
+function parseMoney(v) {
+  if (v === null || v === undefined) return null;
+  let s = v.toString().trim();
+  if (!s || s === '-' || s === '—') return null;
+  const neg = /^\(.*\)$/.test(s) || s.includes('-');
+  s = s.replace(/[R$\s()\-]/g, '');
+  if (s.includes(',')) s = s.replace(/\./g, '').replace(',', '.');
+  else if ((s.match(/\./g) || []).length > 1 || /\.\d{3}$/.test(s)) s = s.replace(/\./g, '');
+  const n = parseFloat(s);
+  return isNaN(n) ? null : (neg ? -n : n);
+}
+
+// "Andre Jocksch" (admin_total) ↔ "Andre Cristiano Capitanio Jocksch" (hist_captacao)
+function sameAssessor(curto, completo) {
+  const a = normName(curto).split(' '), b = normName(completo).split(' ');
+  return a[0] === b[0] && a.every(t => b.includes(t));
+}
+
+const MESES_PT = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+function mesAtualLabel() {
+  const d = new Date();
+  return MESES_PT[d.getMonth()] + './' + String(d.getFullYear()).slice(-2);
+}
+const normLabel = s => (s || '').toString().trim().toLowerCase();
+
+function faixa(valor, meta) {
+  if (valor === null) return 'na';
+  if (valor < 0) return 'neg';
+  const p = meta > 0 ? valor / meta * 100 : 0;
+  if (p >= LIM_BATIDA) return 'ok';
+  if (p >= LIM_MEIO) return 'mid';
+  return 'no';
+}
+const COR  = { ok:'#7ed957', mid:'#f2c94c', no:'#ff9b8f', neg:'#ff5a4a', na:'#8a8f98' };
+const ICON = { ok:'✓', mid:'–', no:'✕', neg:'▼', na:'·' };
+
+function signal(valor, meta, label, isLast) {
+  const f = faixa(valor, meta);
+  const tip = f === 'na' ? label + ': sem dado'
+    : label + ': ' + fmtBRLShort(valor) + (meta > 0 ? ' · ' + (valor / meta * 100).toFixed(0) + '% da meta' : '');
+  return '<span class="sig ' + f + (isLast ? ' last' : '') + '" title="' + escHtml(tip) + '">' + ICON[f] + '</span>';
+}
+
+// Lê hist_captacao e devolve os 5 últimos meses FECHADOS (antes do mês corrente)
+async function loadHistorico() {
+  const out = { rows: [], labels: [] };
+  try {
+    const rows = await fetchSheetRows(SHEET_ID, HIST_TAB);
+    let hdr = rows.find(r => normName(r[0]) === 'assessor');
+    let firstCol = 3, lastCol;
+    if (hdr) {
+      lastCol = hdr.findIndex((h, i) => i >= firstCol && ['total', 'media'].includes(normName(h)));
+      if (lastCol < 0) lastCol = hdr.length;
+    } else {                                         // sem cabeçalho: assume jan..mês atual
+      lastCol = firstCol + new Date().getMonth() + 1;
+      hdr = [];
+      for (let i = firstCol; i < lastCol; i++) hdr[i] = MESES_PT[i - firstCol] + './' + String(new Date().getFullYear()).slice(-2);
+    }
+    // mês corrente fica de fora (está em andamento)
+    let fim = lastCol;
+    const idxAtual = hdr.findIndex((h, i) => i >= firstCol && i < lastCol && normLabel(h) === mesAtualLabel());
+    if (idxAtual >= 0) fim = idxAtual;
+    const ini = Math.max(firstCol, fim - N_MESES);
+    const cols = [];
+    for (let i = ini; i < fim; i++) cols.push(i);
+    out.labels = cols.map(i => (hdr[i] || '').toString().trim());
+
+    for (const r of rows) {
+      const nome = (r[0] || '').toString().trim();
+      if (!nome || r === hdr || /inativo/i.test(nome)) continue;
+      out.rows.push({ nome, valores: cols.map(i => parseMoney(r[i])) });
+    }
+  } catch (e) {
+    console.warn('Histórico indisponível:', e.message);
+  }
+  return out;
+}
+
+// ---------- render ----------
 async function load() {
   try {
     mountCapTotalBadge();
-    const rows = await fetchSheetRows(SHEET_ID, TAB_NAME);
+    const [rows, hist] = await Promise.all([fetchSheetRows(SHEET_ID, TAB_NAME), loadHistorico()]);
+
     const data = [];
     for (const r of rows) {
       const nivel = (r[2] || '').trim();
-      const nome = (r[1] || '').trim();
+      const nome  = (r[1] || '').trim();
       if (!NIVEIS.includes(nivel) || !nome) continue;
       const total = parseNumBR(r[5]);
-      const meta = parseNumBR(r[7]);
-      data.push({ nome, nivel, total, meta });
+      const meta  = parseNumBR(r[7]);
+      const pct   = meta > 0 ? (total / meta) * 100 : 0;
+      const h = hist.rows.find(x => sameAssessor(nome, x.nome));
+      const forma = h ? h.valores : hist.labels.map(() => null);
+      data.push({ nome, nivel, total, meta, pct, forma });
     }
     data.sort((a, b) => b.total - a.total);
 
     const capTotal = data.reduce((s, d) => s + d.total, 0);
     const capTotalEl = document.getElementById('capTotal');
-    capTotalEl.textContent = fmtBRLShort(capTotal);
-    capTotalEl.style.color = capTotal >= 0 ? '#7ed957' : '#ff7a68';
+    if (capTotalEl) {
+      capTotalEl.textContent = fmtBRLShort(capTotal);
+      capTotalEl.style.color = capTotal >= 0 ? '#7ed957' : '#ff7a68';
+    }
 
     const container = document.getElementById('content');
-    container.className = 'simple-table barlist';
+    container.className = 'simple-table barlist cap-mural';
 
     let html = '<div class="simple-row head" style="grid-template-columns:' + COLS_GRID + '">' +
       '<div class="cell pos-cell">#</div>' +
       '<div class="cell name-cell">ASSESSOR</div>' +
-      '<div class="cell bar-cell">ANDAMENTO DA META</div>' +
-      '<div class="cell meta-cell">META</div>' +
-      '<div class="cell num-cell">REAL</div>' +
+      '<div class="cell num-cell">CAPTADO</div>' +
+      '<div class="cell pct-cell">% DA META</div>' +
+      '<div class="cell form-cell">ÚLTIMOS 5 MESES</div>' +
       '</div>';
 
     data.forEach((d, i) => {
       const pos = i + 1;
       const rankCls = pos === 1 ? ' gold' : pos === 2 ? ' silver' : pos === 3 ? ' bronze' : '';
-      const valCls = d.total >= 0 ? 'pos-val' : 'neg-val';
+      const valCls  = d.total >= 0 ? 'pos-val' : 'neg-val';
+      const cor     = COR[faixa(d.total, d.meta)];
+      const largura = Math.max(0, Math.min(100, d.pct));
+      const sinais  = d.forma.map((v, k) => signal(v, d.meta, hist.labels[k], k === d.forma.length - 1)).join('');
+
       html += '<div class="simple-row" style="grid-template-columns:' + COLS_GRID + '">' +
         '<div class="cell pos-cell' + rankCls + '">' + pos + '</div>' +
-        '<div class="cell name-cell"><span class="nm">' + d.nome + '</span><span class="lvl">' + d.nivel + '</span></div>' +
-        '<div class="cell bar-cell">' + progressBar(d.total, d.meta) + '</div>' +
-        '<div class="cell meta-cell"><div class="val">' + fmtBRLShort(d.meta) + '</div></div>' +
+        '<div class="cell name-cell"><span class="nm">' + escHtml(d.nome) + '</span><span class="lvl">' + escHtml(d.nivel) + '</span></div>' +
         '<div class="cell num-cell ' + valCls + '">' + fmtBRLShort(d.total) + '</div>' +
+        '<div class="cell pct-cell" title="Meta: ' + fmtBRLShort(d.meta) + '">' +
+          '<span class="pct-val" style="color:' + cor + '">' + (d.meta > 0 ? d.pct.toFixed(0) + '%' : '—') + '</span>' +
+          '<div class="pct-bar"><i style="width:' + largura + '%;background:' + cor + '"></i></div>' +
+        '</div>' +
+        '<div class="cell form-cell">' + sinais + '</div>' +
         '</div>';
     });
 
     container.innerHTML = html;
+
+    document.getElementById('legendHost').innerHTML =
+      '<div class="form-legend">' +
+        '<span><i class="sig ok">✓</i> Bateu (≥ ' + LIM_BATIDA + '%)</span>' +
+        '<span><i class="sig mid">–</i> ' + LIM_MEIO + '–' + (LIM_BATIDA - 1) + '%</span>' +
+        '<span><i class="sig no">✕</i> Abaixo de ' + LIM_MEIO + '%</span>' +
+        '<span><i class="sig neg">▼</i> Captação negativa</span>' +
+        (hist.labels.length ? '<span>Meses fechados · ' + escHtml(hist.labels[0]) + ' → ' + escHtml(hist.labels[hist.labels.length - 1]) + '</span>' : '') +
+      '</div>';
 
     try {
       const stamp = await fetchSheetCell(SHEET_ID, TAB_NAME, 'H1', 8000);
@@ -91,9 +239,8 @@ async function load() {
 renderNav('captacao');
 startClock('clock');
 load();
-setInterval(load,
-60000);
-  setTimeout(() => location.reload(), 1 * 60 * 60 * 1000);
+setInterval(load, 60000);
+setTimeout(() => location.reload(), 1 * 60 * 60 * 1000);
 </script>
 </body>
 </html>
