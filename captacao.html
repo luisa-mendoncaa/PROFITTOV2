@@ -23,14 +23,14 @@
   .sig.mid  { background:#e0b43a; color:#3a2c00; }  /* 50–99%           */
   .sig.no   { background:#e8837a; }                 /* 0–49%            */
   .sig.neg  { background:#c0362c; font-size:9px; }  /* captação negativa */
-  .sig.na   { background:transparent; border:1.5px dashed rgba(255,255,255,.25); color:transparent; }
+  .sig.na   { background:transparent; color:rgba(255,255,255,.45); font-size:12px; font-weight:700; letter-spacing:-1px; } /* fora da equipe */
   /* último mês em destaque, como no Brasileirão */
   .sig.last { width:24px; height:24px; font-size:13px; box-shadow:0 0 0 2px #0000, 0 0 0 3px currentColor; }
   .sig.ok.last  { color:#fff; box-shadow:0 0 0 2px rgba(0,0,0,.35), 0 0 0 4px #1fa55a; }
   .sig.mid.last { color:#3a2c00; box-shadow:0 0 0 2px rgba(0,0,0,.35), 0 0 0 4px #e0b43a; }
   .sig.no.last  { color:#fff; box-shadow:0 0 0 2px rgba(0,0,0,.35), 0 0 0 4px #e8837a; }
   .sig.neg.last { color:#fff; font-size:11px; box-shadow:0 0 0 2px rgba(0,0,0,.35), 0 0 0 4px #c0362c; }
-  .sig.na.last  { box-shadow:none; }
+  .sig.na.last  { box-shadow:none; font-size:14px; }
 
   .form-legend { display:flex; gap:18px; justify-content:flex-end; align-items:center; flex-wrap:wrap;
                  margin:12px 4px 0; font-size:12px; opacity:.75; }
@@ -111,18 +111,18 @@ function faixa(valor, meta) {
   return 'no';
 }
 const COR  = { ok:'#7ed957', mid:'#f2c94c', no:'#ff9b8f', neg:'#ff5a4a', na:'#8a8f98' };
-const ICON = { ok:'✓', mid:'–', no:'✕', neg:'▼', na:'·' };
+const ICON = { ok:'✓', mid:'–', no:'✕', neg:'▼', na:'--' };
 
 function signal(valor, meta, label, isLast) {
   const f = faixa(valor, meta);
-  const tip = f === 'na' ? label + ': sem dado'
+  const tip = f === 'na' ? label + ': fora da equipe'
     : label + ': ' + fmtBRLShort(valor) + (meta > 0 ? ' · ' + (valor / meta * 100).toFixed(0) + '% da meta' : '');
   return '<span class="sig ' + f + (isLast ? ' last' : '') + '" title="' + escHtml(tip) + '">' + ICON[f] + '</span>';
 }
 
 // Lê hist_captacao e devolve os 5 últimos meses FECHADOS (antes do mês corrente)
 async function loadHistorico() {
-  const out = { rows: [], labels: [] };
+  const out = { rows: [], labels: [], inativos: [] };
   try {
     const rows = await fetchSheetRows(SHEET_ID, HIST_TAB);
     let hdr = rows.find(r => normName(r[0]) === 'assessor');
@@ -146,7 +146,8 @@ async function loadHistorico() {
 
     for (const r of rows) {
       const nome = (r[0] || '').toString().trim();
-      if (!nome || r === hdr || /inativo/i.test(nome)) continue;
+      if (!nome || r === hdr) continue;
+      if (/inativo/i.test(nome)) { out.inativos.push(nome); continue; }
       out.rows.push({ nome, valores: cols.map(i => parseMoney(r[i])) });
     }
   } catch (e) {
@@ -162,12 +163,15 @@ async function load() {
     const [rows, hist] = await Promise.all([fetchSheetRows(SHEET_ID, TAB_NAME), loadHistorico()]);
 
     const data = [];
+    let capTotal = 0;   // CAP TOTAL do escritório inclui inativos
     for (const r of rows) {
       const nivel = (r[2] || '').trim();
       const nome  = (r[1] || '').trim();
       if (!NIVEIS.includes(nivel) || !nome) continue;
       const total = parseNumBR(r[5]);
       const meta  = parseNumBR(r[7]);
+      capTotal += total;
+      if (hist.inativos.some(x => sameAssessor(nome, x))) continue;   // marcado (inativo) na hist_captacao
       const pct   = meta > 0 ? (total / meta) * 100 : 0;
       const h = hist.rows.find(x => sameAssessor(nome, x.nome));
       const forma = h ? h.valores : hist.labels.map(() => null);
@@ -175,7 +179,6 @@ async function load() {
     }
     data.sort((a, b) => b.total - a.total);
 
-    const capTotal = data.reduce((s, d) => s + d.total, 0);
     const capTotalEl = document.getElementById('capTotal');
     if (capTotalEl) {
       capTotalEl.textContent = fmtBRLShort(capTotal);
@@ -221,6 +224,7 @@ async function load() {
         '<span><i class="sig mid">–</i> ' + LIM_MEIO + '–' + (LIM_BATIDA - 1) + '%</span>' +
         '<span><i class="sig no">✕</i> Abaixo de ' + LIM_MEIO + '%</span>' +
         '<span><i class="sig neg">▼</i> Captação negativa</span>' +
+        '<span><i class="sig na">--</i> Fora da equipe</span>' +
         (hist.labels.length ? '<span>Meses fechados · ' + escHtml(hist.labels[0]) + ' → ' + escHtml(hist.labels[hist.labels.length - 1]) + '</span>' : '') +
       '</div>';
 
