@@ -1,169 +1,201 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;600;700;800;900&display=swap');
+/* PROFITTO TV — identidade visual "Planejamento patrimonial" (navy + azul lavanda) */
+@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&family=Montserrat:wght@400;500;600;700&display=swap');
+
+:root {
+  --bg-0: #07122a;          /* fundo mais escuro   */
+  --bg-1: #0c1c3b;          /* fundo base          */
+  --bg-2: #13295a;          /* brilho do gradiente */
+  --ink: #eef2fb;           /* texto principal     */
+  --ink-2: #b9c4dd;         /* texto secundário    */
+  --ink-3: #7d8bab;         /* texto de apoio      */
+  --accent: #a3b8f2;        /* azul lavanda        */
+  --accent-2: #d7e1f7;      /* azul claro          */
+  --royal-a: #4f72e6;       /* card de destaque    */
+  --royal-b: #3450c4;
+  --glass: rgba(255,255,255,.035);
+  --glass-2: rgba(255,255,255,.06);
+  --line: rgba(255,255,255,.10);
+  --line-2: rgba(255,255,255,.06);
+  --pos: #7fdca6;           /* positivo            */
+  --neg: #ff8a80;           /* negativo            */
+  --gold: #e6c574; --silver: #c9d2e8; --bronze: #d9a07a;
+  --f-display: 'Lexend', 'Montserrat', sans-serif;
+  --f-body: 'Montserrat', 'Lexend', sans-serif;
+}
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 html, body {
   width: 100%; height: 100%;
-  background: #f2ede2;
-  color: #23262e;
-  font-family: 'Inter', 'Poppins', sans-serif;
+  background: var(--bg-1);
+  background:
+    radial-gradient(ellipse 70% 55% at 78% -5%, rgba(79,114,230,.28) 0%, rgba(79,114,230,0) 60%),
+    radial-gradient(ellipse 60% 50% at 0% 100%, rgba(19,41,90,.9) 0%, rgba(19,41,90,0) 70%),
+    linear-gradient(160deg, var(--bg-1) 0%, var(--bg-0) 100%);
+  color: var(--ink);
+  font-family: var(--f-body);
   overflow: hidden;
 }
 
-.wrap { display: flex; flex-direction: column; height: 100vh; padding: 1.6vh 2.2vw 2vh; }
+.wrap { display: flex; flex-direction: column; height: 100vh; padding: 2vh 2.4vw 1.8vh; }
 
 /* ---------- Navegação / topo ---------- */
 .topbar {
   display: flex; align-items: center; justify-content: flex-start;
-  padding-bottom: 1.6vh; margin-bottom: 2vh;
-  border-bottom: 3px solid #ded5bf;
+  padding-bottom: 1.8vh; margin-bottom: 2.2vh;
+  border-bottom: 1px solid var(--line);
 }
 
-.brand { display: flex; align-items: center; gap: 0.9vw; flex-shrink: 0; }
-.logo-badge {
-  width: 5.2vh; height: 5.2vh; border-radius: 50%; background: #23262e; color: #f2ede2;
-  display: flex; align-items: center; justify-content: center; font-family: 'Poppins', sans-serif;
-  font-weight: 800; font-size: 2.4vh;
-}
-.brand-text { display: flex; flex-direction: column; line-height: 1.15; }
-.brand-text .logo { font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 2.6vh; letter-spacing: 0.03em; color: #23262e; }
-.brand-text .partner { font-size: 1.15vh; letter-spacing: 0.22em; color: #a4906a; font-weight: 700; }
+/* Assinatura PROFITTO | btg pactual (tipográfica) */
+.brand { display: flex; align-items: center; gap: 1.1vw; flex-shrink: 0; }
+.brand-profitto { display: flex; flex-direction: column; line-height: 1; }
+.brand-profitto .logo { font-family: var(--f-display); font-weight: 300; font-size: 2.9vh; letter-spacing: .2em; color: var(--ink); }
+.brand-profitto .sub  { font-family: var(--f-display); font-weight: 400; font-size: 1vh; letter-spacing: .42em; color: var(--ink-2); margin-top: .6vh; padding-left: .1em; }
+.brand-rule { width: 1px; height: 4.4vh; background: rgba(255,255,255,.35); }
+.brand-btg { font-family: var(--f-display); font-size: 2.6vh; color: var(--ink); letter-spacing: -.01em; white-space: nowrap; }
+.brand-btg b { font-weight: 700; }
+.brand-btg span { font-weight: 300; }
 
-.navtabs { display: flex; gap: 0.8vw; margin-left: 3vw; }
+.navtabs { display: flex; gap: .6vw; margin-left: 3.4vw; }
 .navtab {
-  text-decoration: none; color: #6b6252; font-family: 'Poppins', sans-serif; font-weight: 700;
-  font-size: 1.7vh; letter-spacing: 0.06em; padding: 1.4vh 2vw; border-radius: 999px;
-  transition: background .15s ease, color .15s ease;
+  text-decoration: none; color: var(--ink-3); font-family: var(--f-display); font-weight: 400;
+  font-size: 1.75vh; letter-spacing: .12em; padding: 1.2vh 1.8vw; border-radius: 999px;
+  border: 1px solid transparent;
+  transition: background .15s ease, color .15s ease, border-color .15s ease;
 }
-.navtab:hover { background: rgba(164,144,106,0.12); }
-.navtab.active { background: #a4906a; color: #fff8ec; box-shadow: 0 4px 14px rgba(164,144,106,0.4); }
+.navtab:hover { color: var(--ink); background: var(--glass); }
+.navtab.active { color: var(--ink); background: rgba(163,184,242,.12); border-color: rgba(163,184,242,.35); }
 
 .meta { text-align: right; margin-left: auto; flex-shrink: 0; }
-.meta .clock { font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 2.6vh; color: #23262e; }
-.meta .upd { font-size: 1.1vh; letter-spacing: 0.1em; color: #9a9184; margin-top: 0.4vh; }
-.meta .upd b { color: #4a4436; font-size: 1.35vh; }
+.meta .clock { font-family: var(--f-display); font-weight: 300; font-size: 3vh; letter-spacing: .04em; color: var(--ink); font-variant-numeric: tabular-nums; }
+.meta .upd { font-size: 1.05vh; letter-spacing: .16em; color: var(--ink-3); margin-top: .5vh; }
+.meta .upd b { color: var(--ink-2); font-size: 1.35vh; font-weight: 600; letter-spacing: .06em; }
 
-/* ---------- Selo CAP TOTAL, embutido na topbar (Captação) — não rouba altura da tabela ---------- */
+/* ---------- Selo CAP TOTAL (Captação) — card azul royal ---------- */
 .cap-total-badge {
-  display: flex; align-items: center; gap: 0.9vw; flex-shrink: 0; margin-left: 6vw;
-  background: #23262e; border-radius: 14px; padding: 1.1vh 1.8vw;
-  box-shadow: 0 4px 14px rgba(35,38,46,0.18);
+  display: flex; align-items: center; gap: 1.1vw; flex-shrink: 0; margin-left: auto; margin-right: 3vw;
+  background: linear-gradient(120deg, var(--royal-a) 0%, var(--royal-b) 100%);
+  border: 1px solid rgba(255,255,255,.18); border-radius: 14px; padding: 1.1vh 1.8vw;
+  box-shadow: 0 10px 30px rgba(52,80,196,.35);
 }
-.cap-total-lbl { font-family: 'Poppins', sans-serif; font-size: 1.7vh; font-weight: 800; letter-spacing: 0.18em; color: #d8cfbb; }
-.cap-total-val { font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 4.6vh; line-height: 1; color: #fff; }
+.cap-total-badge + .meta { margin-left: 0; }
+.cap-total-lbl { font-family: var(--f-display); font-size: 1.5vh; font-weight: 400; letter-spacing: .22em; color: rgba(255,255,255,.75); }
+.cap-total-val { font-family: var(--f-display); font-weight: 600; font-size: 4.4vh; line-height: 1; color: #fff; font-variant-numeric: tabular-nums; }
 
-/* ---------- Título de seção ---------- */
+/* ---------- Título de seção (eyebrow, como nos slides) ---------- */
 .section-title {
-  font-size: 1.6vh; font-weight: 800; letter-spacing: 0.18em; color: #8a8170;
-  margin-bottom: 1.6vh;
+  font-family: var(--f-display); font-size: 1.7vh; font-weight: 400; letter-spacing: .14em; color: var(--accent);
+  margin-bottom: 1.6vh; text-transform: uppercase;
 }
 
-/* Cabeçalho da tabela clicável para ordenar (Intensidade: DIA / MÊS) */
-.simple-row.head .sort-head { cursor: pointer; user-select: none; display: flex; align-items: center; justify-content: center; gap: 0.4vw; }
-.simple-row.head .sort-head .sort-arrow { font-size: 1.1vh; color: #8a8170; transition: color .15s ease, transform .15s ease; }
-.simple-row.head .sort-head:hover .sort-arrow { color: #d8cfbb; }
-.simple-row.head .sort-head.active { color: #a4906a; }
-.simple-row.head .sort-head.active .sort-arrow { color: #a4906a; transform: scale(1.25); }
-
-.simple-row .num-cell.sort-active { color: #a4906a; }
+/* Cabeçalho clicável para ordenar (Intensidade) */
+.simple-row.head .sort-head { cursor: pointer; user-select: none; display: flex; align-items: center; justify-content: center; gap: .4vw; }
+.simple-row.head .sort-head .sort-arrow { font-size: 1.1vh; color: var(--ink-3); transition: color .15s ease, transform .15s ease; }
+.simple-row.head .sort-head:hover .sort-arrow { color: var(--accent-2); }
+.simple-row.head .sort-head.active { color: var(--accent); }
+.simple-row.head .sort-head.active .sort-arrow { color: var(--accent); transform: scale(1.25); }
+.simple-row .num-cell.sort-active { color: var(--accent-2); }
 
 /* ---------- Grid de cards ---------- */
 .cardgrid { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.4vh 1.4vw; overflow: hidden; }
 
 .card {
-  border-radius: 20px; padding: 1.8vh 1.8vw; display: flex; flex-direction: column; justify-content: space-between;
-  border: 2px solid transparent; position: relative; overflow: hidden;
-  box-shadow: 0 4px 14px rgba(35,38,46,0.05);
+  border-radius: 16px; padding: 1.8vh 1.8vw; display: flex; flex-direction: column; justify-content: space-between;
+  border: 1px solid var(--line); position: relative; overflow: hidden; background: var(--glass);
 }
-.card.pos { background: #e3efdd; border-color: #bfdcae; }
-.card.neg { background: #f7e3e0; border-color: #eab8b0; }
+.card.pos { border-left: 3px solid var(--pos); }
+.card.neg { border-left: 3px solid var(--neg); }
 
 .card-top { display: flex; justify-content: space-between; align-items: flex-start; }
-.card-name { font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 2.15vh; color: #23262e;
+.card-name { font-family: var(--f-display); font-weight: 500; font-size: 2.15vh; color: var(--ink);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
-.card-tag { display: inline-block; font-size: 1.1vh; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase;
-  color: #8a8170; margin-top: 0.5vh; }
+.card-tag { display: inline-block; font-size: 1.1vh; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); margin-top: .5vh; }
 
-.card-meta { text-align: right; flex-shrink: 0; padding-left: 0.6vw; }
-.card-meta .lbl { font-size: 1vh; letter-spacing: 0.12em; color: #9a9184; font-weight: 700; }
-.card-meta .val { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 1.7vh; color: #6b6252; }
+.card-meta { text-align: right; flex-shrink: 0; padding-left: .6vw; }
+.card-meta .lbl { font-size: 1vh; letter-spacing: .12em; color: var(--ink-3); font-weight: 600; }
+.card-meta .val { font-family: var(--f-display); font-weight: 500; font-size: 1.7vh; color: var(--ink-2); }
 
-.bar-track { position: relative; width: 100%; height: 1.1vh; background: #e4dcc6; border-radius: 999px; margin: 1.6vh 0 1vh; }
-.bar-fill { position: absolute; left: 0; top: 0; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #c2a874, #a4906a); }
-.bar-dot { position: absolute; left: -0.3vh; top: 50%; transform: translateY(-50%); width: 1.5vh; height: 1.5vh; border-radius: 50%; background: #fff; border: 3px solid #a4906a; z-index: 2; }
-.bar-goal { position: absolute; right: 2%; top: -0.6vh; width: 2px; height: 2.3vh; background: #6b6252; }
+.bar-track { position: relative; width: 100%; height: 1.1vh; background: rgba(255,255,255,.08); border-radius: 999px; margin: 1.6vh 0 1vh; }
+.bar-fill { position: absolute; left: 0; top: 0; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--accent), var(--royal-a)); }
+.bar-dot { position: absolute; left: -.3vh; top: 50%; transform: translateY(-50%); width: 1.5vh; height: 1.5vh; border-radius: 50%; background: var(--bg-1); border: 3px solid var(--accent); z-index: 2; }
+.bar-goal { position: absolute; right: 2%; top: -.6vh; width: 2px; height: 2.3vh; background: var(--ink-2); }
 
 .card-bottom { display: flex; justify-content: space-between; align-items: flex-end; }
-.card-bottom .lbl { font-size: 1.15vh; letter-spacing: 0.14em; color: #8a8170; font-weight: 800; }
-.card-bottom .val { font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 3vh; }
-.card.pos .card-bottom .val { color: #3d7a37; }
-.card.neg .card-bottom .val { color: #b8372a; }
+.card-bottom .lbl { font-size: 1.15vh; letter-spacing: .14em; color: var(--ink-3); font-weight: 600; }
+.card-bottom .val { font-family: var(--f-display); font-weight: 600; font-size: 3vh; }
+.card.pos .card-bottom .val { color: var(--pos); }
+.card.neg .card-bottom .val { color: var(--neg); }
 
 .card-rank {
   position: absolute; top: -1.2vh; right: -1.2vh; width: 5vh; height: 5vh; border-radius: 50%;
-  background: #23262e; color: #f2ede2; display: flex; align-items: center; justify-content: center;
-  font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 2vh; box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+  background: var(--bg-2); color: var(--ink); display: flex; align-items: center; justify-content: center;
+  font-family: var(--f-display); font-weight: 600; font-size: 2vh;
 }
-.card-rank.gold { background: #c99a2e; }
-.card-rank.silver { background: #9aa0a8; }
-.card-rank.bronze { background: #a5673a; }
+.card-rank.gold { background: var(--gold); color: #1d1a10; }
+.card-rank.silver { background: var(--silver); color: #141c30; }
+.card-rank.bronze { background: var(--bronze); color: #2a1609; }
 
-/* ---------- Tabela simples (Intensidade) ---------- */
-.simple-table { flex: 1; min-height: 0; display: flex; flex-direction: column; border: 3px solid #23262e; border-radius: 18px; overflow: hidden; background: #fffdf7; }
-.simple-row { display: grid; grid-template-columns: 10% 1fr 22% 22%; align-items: center; flex: 1; min-height: 0; overflow: hidden; border-bottom: 2px solid #ded5bf; }
+/* ---------- Tabela (vidro sobre o navy) ---------- */
+.simple-table {
+  flex: 1; min-height: 0; display: flex; flex-direction: column;
+  border: 1px solid var(--line); border-radius: 16px; overflow: hidden;
+  background: linear-gradient(180deg, rgba(255,255,255,.045) 0%, rgba(255,255,255,.02) 100%);
+  box-shadow: 0 20px 50px rgba(0,0,0,.25);
+}
+.simple-row { display: grid; grid-template-columns: 10% 1fr 22% 22%; align-items: center; flex: 1; min-height: 0; overflow: hidden; border-bottom: 1px solid var(--line-2); }
 .simple-row:last-child { border-bottom: none; }
-.simple-row.head { background: #23262e; color: #f2ede2; flex: 0 0 auto; padding: 1.6vh 0; }
-.simple-row.head .cell { font-weight: 800; font-size: 1.9vh; letter-spacing: 0.16em; }
-.simple-row:nth-child(even):not(.head) { background: #f7f3e8; }
+.simple-row.head { background: rgba(163,184,242,.07); color: var(--accent); flex: 0 0 auto; padding: 1.5vh 0; border-bottom: 1px solid var(--line); }
+.simple-row.head .cell { font-family: var(--f-display); font-weight: 400; font-size: 1.6vh; letter-spacing: .16em; }
+.simple-row:nth-child(even):not(.head) { background: rgba(255,255,255,.022); }
 .cell { padding: 0 1.6vw; }
-.simple-row .pos-cell { font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 2.6vh; color: #a4906a; text-align: center; }
-.simple-row .name-cell { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 2.6vh; color: #23262e; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.simple-row .num-cell { font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 2.8vh; color: #23262e; text-align: center; }
-.simple-row.head .name-cell { color: #f2ede2; text-align: left; font-size: 1.9vh; }
+.simple-row .pos-cell { font-family: var(--f-display); font-weight: 400; font-size: 2.5vh; color: var(--ink-3); text-align: center; font-variant-numeric: tabular-nums; }
+.simple-row .name-cell { font-family: var(--f-display); font-weight: 400; font-size: 2.6vh; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.simple-row .num-cell { font-family: var(--f-display); font-weight: 600; font-size: 2.8vh; color: var(--ink); text-align: center; font-variant-numeric: tabular-nums; }
+.simple-row.head .name-cell { color: var(--accent); text-align: left; font-size: 1.6vh; }
 .simple-row.head .pos-cell,
-.simple-row.head .num-cell { color: #f2ede2; text-align: center; font-size: 1.9vh; }
+.simple-row.head .num-cell { color: var(--accent); text-align: center; font-size: 1.6vh; font-weight: 400; }
 
 /* Variante com mais colunas (Ranking Campanha Semestral) */
 .simple-table.wide .name-cell { font-size: 1.9vh; }
-.simple-table.wide .num-cell { font-size: 1.9vh; }
+.simple-table.wide .num-cell { font-size: 1.9vh; font-weight: 500; color: var(--ink-2); }
 .simple-table.wide .pos-cell { font-size: 1.9vh; }
 .simple-table.wide .simple-row.head .name-cell,
 .simple-table.wide .simple-row.head .num-cell,
-.simple-table.wide .simple-row.head .pos-cell { font-size: 1.35vh; }
-.simple-table.wide .txt-cell { padding: 0 1vw; font-size: 1.7vh; font-weight: 600; color: #4a4436; }
-.simple-table.wide .simple-row.head .txt-cell { color: #f2ede2; font-size: 1.35vh; font-weight: 800; }
-.simple-table.wide .num-cell.strong { font-weight: 800; }
-.simple-table.wide .num-cell.pos-val { color: #3d7a37; }
-.simple-table.wide .num-cell.neg-val { color: #b8372a; }
+.simple-table.wide .simple-row.head .pos-cell { font-size: 1.3vh; color: var(--accent); }
+.simple-table.wide .txt-cell { padding: 0 1vw; font-size: 1.65vh; font-weight: 500; color: var(--ink-2); }
+.simple-table.wide .simple-row.head .txt-cell { color: var(--accent); font-family: var(--f-display); font-size: 1.3vh; font-weight: 400; }
+.simple-table.wide .num-cell.strong { font-weight: 600; color: var(--ink); }
+.simple-table.wide .num-cell.pos-val { color: var(--pos); }
+.simple-table.wide .num-cell.neg-val { color: var(--neg); }
 
-/* Colunas numéricas com sinal (usado também fora do modo "wide") */
-.simple-row .num-cell.pos-val { color: #3d7a37; }
-.simple-row .num-cell.neg-val { color: #b8372a; }
+/* Colunas numéricas com sinal */
+.simple-row .num-cell.pos-val { color: var(--pos); }
+.simple-row .num-cell.neg-val { color: var(--neg); }
 
-/* Rank em destaque (top 3) */
-.simple-row .pos-cell.gold { color: #c99a2e; }
-.simple-row .pos-cell.silver { color: #9aa0a8; }
-.simple-row .pos-cell.bronze { color: #a5673a; }
+/* Top 3 */
+.simple-row .pos-cell.gold { color: var(--gold); font-weight: 600; }
+.simple-row .pos-cell.silver { color: var(--silver); font-weight: 600; }
+.simple-row .pos-cell.bronze { color: var(--bronze); font-weight: 600; }
 
-/* Variante lista com barra de andamento (Captação) */
-.simple-table.barlist .name-cell { display: flex; flex-direction: row; align-items: baseline; gap: 0.7vw; overflow: hidden; }
-.simple-table.barlist .simple-row:not(.head) .name-cell { font-size: 3vh; }
+/* Variante lista (Captação) */
+.simple-table.barlist .name-cell { display: flex; flex-direction: row; align-items: baseline; gap: .7vw; overflow: hidden; }
+.simple-table.barlist .simple-row:not(.head) .name-cell { font-size: 2.9vh; }
 .simple-table.barlist .name-cell .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
-.simple-table.barlist .name-cell .lvl { flex-shrink: 0; font-size: 1.05vh; font-weight: 400; letter-spacing: 0.08em; color: #a49b8c; text-transform: uppercase; }
+.simple-table.barlist .name-cell .lvl { flex-shrink: 0; font-family: var(--f-body); font-size: 1.05vh; font-weight: 500; letter-spacing: .14em; color: var(--ink-3); text-transform: uppercase; }
 .simple-table.barlist .bar-cell { padding: 0 1.6vw; }
 .simple-table.barlist .bar-track { height: 1.8vh; margin: 0; }
 .simple-table.barlist .bar-dot { width: 2vh; height: 2vh; }
 .simple-table.barlist .meta-cell { text-align: right; }
-.simple-table.barlist .meta-cell .lbl { font-size: 1.1vh; letter-spacing: 0.12em; color: #9a9184; font-weight: 700; }
-.simple-table.barlist .meta-cell .val { font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 2.7vh; color: #4a4436; }
+.simple-table.barlist .meta-cell .lbl { font-size: 1.1vh; letter-spacing: .12em; color: var(--ink-3); font-weight: 600; }
+.simple-table.barlist .meta-cell .val { font-family: var(--f-display); font-weight: 500; font-size: 2.7vh; color: var(--ink-2); }
 .simple-table.barlist .num-cell { text-align: right; }
-.simple-table.barlist .simple-row:not(.head) .num-cell { font-size: 3.6vh; font-weight: 800; }
-.simple-table.barlist .simple-row.head .meta-cell { color: #f2ede2; }
+.simple-table.barlist .simple-row:not(.head) .num-cell { font-size: 3.4vh; font-weight: 600; }
+.simple-table.barlist .simple-row.head .meta-cell { color: var(--accent); }
 
-.footer { padding-top: 1.2vh; text-align: center; font-size: 1.15vh; color: #a49b8c; }
+.footer { padding-top: 1.2vh; text-align: center; font-size: 1.1vh; letter-spacing: .04em; color: var(--ink-3); }
 
 .loading, .error-box {
   flex: 1; display: flex; align-items: center; justify-content: center;
-  font-size: 2.4vh; color: #8a8170; text-align: center; flex-direction: column; gap: 1.2vh;
+  font-family: var(--f-display); font-weight: 300; font-size: 2.4vh; color: var(--ink-2); text-align: center; flex-direction: column; gap: 1.2vh;
 }
-.error-box { color: #b8372a; }
+.error-box { color: var(--neg); }

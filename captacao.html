@@ -4,13 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ranking Captação — PROFITTO</title>
-<link rel="stylesheet" href="style.css?v=4">
+<link rel="stylesheet" href="style.css?v=5">
 <style>
-  /* ===== Mural de captação — colunas novas (dimensionado para TV) ===== */
+  /* ===== Mural de captação (dimensionado para TV · tema navy) ===== */
   .cap-mural .pct-cell { display:flex; align-items:center; gap:14px; padding-right:24px; }
-  .cap-mural .pct-val  { font-size:26px; font-weight:800; min-width:78px; text-align:right; font-variant-numeric:tabular-nums; }
-  .cap-mural .pct-bar  { flex:1; height:14px; border-radius:7px; background:rgba(0,0,0,.08); overflow:hidden; }
-  .cap-mural .pct-bar > i { display:block; height:100%; border-radius:7px; }
+  .cap-mural .pct-val  { font-family:var(--f-display); font-size:3vh; font-weight:600; min-width:4.6vw; text-align:right; font-variant-numeric:tabular-nums; }
+  .cap-mural .pct-bar  { flex:1; height:1.5vh; border-radius:999px; background:rgba(255,255,255,.08); overflow:hidden; }
+  .cap-mural .pct-bar > i { display:block; height:100%; border-radius:999px; }
   .cap-mural .num-cell { font-variant-numeric:tabular-nums; }
 
   .cap-mural .form-cell { display:flex; align-items:center; justify-content:center; gap:10px; }
@@ -18,24 +18,24 @@
   .cap-mural .head .pct-cell { justify-content:center; padding-right:0; }
 
   .sig { width:30px; height:30px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center;
-         font-size:17px; font-weight:800; line-height:1; color:#fff; flex:0 0 auto; }
-  .sig.ok   { background:#1fa55a; }                 /* >= 100%          */
-  .sig.mid  { background:#e0b43a; color:#3a2c00; }  /* 50–99%           */
-  .sig.no   { background:#e8837a; }                 /* 0–49%            */
-  .sig.neg  { background:#c0362c; font-size:14px; } /* captação negativa */
-  .sig.na   { background:transparent; color:#8a8272; font-size:20px; font-weight:800; letter-spacing:-1px; } /* fora da equipe */
-  /* último mês em destaque, como no Brasileirão */
-  .sig.last { width:34px; height:34px; font-size:19px; margin-left:4px; }
-  .sig.ok.last  { color:#fff; box-shadow:0 0 0 2px #fff, 0 0 0 4px #1fa55a; }
-  .sig.mid.last { color:#3a2c00; box-shadow:0 0 0 2px #fff, 0 0 0 4px #e0b43a; }
-  .sig.no.last  { color:#fff; box-shadow:0 0 0 2px #fff, 0 0 0 4px #e8837a; }
-  .sig.neg.last { color:#fff; font-size:18px; box-shadow:0 0 0 2px #fff, 0 0 0 4px #c0362c; }
+         font-size:16px; font-weight:700; line-height:1; flex:0 0 auto; }
+  .sig.ok   { background:#5fcf93; color:#06301b; }  /* >= 100%          */
+  .sig.mid  { background:#f0c66e; color:#3a2a05; }  /* 50–99%           */
+  .sig.no   { background:#f3a39a; color:#4a1510; }  /* 0–49%            */
+  .sig.neg  { background:#e5564b; color:#fff; font-size:13px; } /* captação negativa */
+  .sig.na   { background:transparent; color:#6f7fa3; font-size:20px; font-weight:600; letter-spacing:-1px; } /* fora da equipe */
+  /* último mês em destaque */
+  .sig.last { width:34px; height:34px; font-size:18px; margin-left:4px; }
+  .sig.ok.last  { box-shadow:0 0 0 2px #0c1c3b, 0 0 0 4px #5fcf93; }
+  .sig.mid.last { box-shadow:0 0 0 2px #0c1c3b, 0 0 0 4px #f0c66e; }
+  .sig.no.last  { box-shadow:0 0 0 2px #0c1c3b, 0 0 0 4px #f3a39a; }
+  .sig.neg.last { font-size:16px; box-shadow:0 0 0 2px #0c1c3b, 0 0 0 4px #e5564b; }
   .sig.na.last  { box-shadow:none; font-size:24px; }
 
   .form-legend { display:flex; gap:22px; justify-content:center; align-items:center; flex-wrap:wrap;
-                 margin:14px 4px 0; font-size:14px; opacity:.85; }
+                 margin:1.4vh 4px 0; font-size:1.35vh; color:var(--ink-2); }
   .form-legend span { display:inline-flex; align-items:center; gap:7px; }
-  .form-legend .sig { width:20px; height:20px; font-size:12px; }
+  .form-legend .sig { width:20px; height:20px; font-size:11px; }
   .form-legend .sig.na { width:auto; font-size:14px; }
 </style>
 </head>
@@ -47,7 +47,7 @@
   <div class="footer">Fonte: PROFITTO_DAY_v2 · abas admin_total e hist_captacao · atualiza a cada 60s</div>
 </div>
 
-<script src="assets.js?v=4"></script>
+<script src="assets.js?v=5"></script>
 <script>
 const SHEET_ID  = '1IcGygIIk6TUQBf4Vcx-KOtD2RDK5y0dbAcELr_U6KBs';
 const TAB_NAME  = 'admin_total';
@@ -111,7 +111,7 @@ function faixa(valor, meta) {
   if (p >= LIM_MEIO) return 'mid';
   return 'no';
 }
-const COR  = { ok:'#7ed957', mid:'#f2c94c', no:'#ff9b8f', neg:'#ff5a4a', na:'#8a8f98' };
+const COR  = { ok:'#7fdca6', mid:'#f0c66e', no:'#f3a39a', neg:'#ff7b70', na:'#6f7fa3' };
 const ICON = { ok:'✓', mid:'–', no:'✕', neg:'▼', na:'--' };
 
 function signal(valor, meta, label, isLast) {
@@ -183,7 +183,7 @@ async function load() {
     const capTotalEl = document.getElementById('capTotal');
     if (capTotalEl) {
       capTotalEl.textContent = fmtBRLShort(capTotal);
-      capTotalEl.style.color = capTotal >= 0 ? '#7ed957' : '#ff7a68';
+      capTotalEl.style.color = capTotal >= 0 ? '#ffffff' : '#ffd0cb';
     }
 
     const container = document.getElementById('content');

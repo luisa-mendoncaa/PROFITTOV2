@@ -41,10 +41,10 @@ function fmtBRLShort(n) {
 /* Monta a barra de progresso em relação à meta (0% a 100%, com marcador de meta na ponta) */
 /* Cor proporcional ao andamento da meta: vermelho (déficit/longe) -> amarelo -> verde (meta batida) */
 function barColor(signedPct) {
-  if (signedPct <= 0) return '#c33f30';
+  if (signedPct <= 0) return '#ff8a80';
   const t = Math.max(0, Math.min(1, signedPct / 100));
-  const hue = t * 120; // 0 = vermelho, 60 = amarelo, 120 = verde
-  return 'hsl(' + hue.toFixed(0) + ', 68%, 44%)';
+  const hue = 8 + t * 137; // coral -> âmbar -> verde, calibrado para fundo navy
+  return 'hsl(' + hue.toFixed(0) + ', 62%, 66%)';
 }
 
 function progressBar(real, meta) {
@@ -69,7 +69,8 @@ function renderNav(active) {
   ).join('');
   host.innerHTML =
     '<div class="topbar">' +
-    '  <div class="brand"><span class="logo-badge">P</span><div class="brand-text"><span class="logo">PROFITTO</span><span class="partner">BTG PACTUAL</span></div></div>' +
+    '  <div class="brand"><div class="brand-profitto"><span class="logo">PROFITTO</span><span class="sub">GROWTH</span></div>' +
+    '<span class="brand-rule"></span><div class="brand-btg"><b>btg</b><span>pactual</span></div></div>' +
     '  <div class="navtabs">' + tabsHtml + '</div>' +
     '  <div class="meta"><div class="clock" id="clock">--</div><div class="upd">ÚLTIMA ATUALIZAÇÃO<br><b id="lastUpdate">--</b></div></div>' +
     '</div>';
