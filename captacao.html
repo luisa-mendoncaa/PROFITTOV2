@@ -6,36 +6,37 @@
 <title>Ranking Captação — PROFITTO</title>
 <link rel="stylesheet" href="style.css?v=4">
 <style>
-  /* ===== Mural de captação — colunas novas ===== */
-  .cap-mural .pct-cell { display:flex; flex-direction:column; gap:6px; justify-content:center; }
-  .cap-mural .pct-val  { font-weight:700; font-variant-numeric:tabular-nums; }
-  .cap-mural .pct-bar  { height:6px; border-radius:3px; background:rgba(255,255,255,.08); overflow:hidden; }
-  .cap-mural .pct-bar > i { display:block; height:100%; border-radius:3px; }
-  .cap-mural .num-cell, .cap-mural .pct-val { font-variant-numeric:tabular-nums; }
+  /* ===== Mural de captação — colunas novas (dimensionado para TV) ===== */
+  .cap-mural .pct-cell { display:flex; align-items:center; gap:14px; padding-right:24px; }
+  .cap-mural .pct-val  { font-size:26px; font-weight:800; min-width:78px; text-align:right; font-variant-numeric:tabular-nums; }
+  .cap-mural .pct-bar  { flex:1; height:14px; border-radius:7px; background:rgba(0,0,0,.08); overflow:hidden; }
+  .cap-mural .pct-bar > i { display:block; height:100%; border-radius:7px; }
+  .cap-mural .num-cell { font-variant-numeric:tabular-nums; }
 
-  .cap-mural .form-cell { display:flex; align-items:center; justify-content:flex-end; gap:6px; }
+  .cap-mural .form-cell { display:flex; align-items:center; justify-content:center; gap:10px; }
   .cap-mural .head .form-cell,
-  .cap-mural .head .pct-cell { justify-content:center; }
+  .cap-mural .head .pct-cell { justify-content:center; padding-right:0; }
 
-  .sig { width:18px; height:18px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center;
-         font-size:11px; font-weight:800; line-height:1; color:#fff; flex:0 0 auto; }
+  .sig { width:30px; height:30px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center;
+         font-size:17px; font-weight:800; line-height:1; color:#fff; flex:0 0 auto; }
   .sig.ok   { background:#1fa55a; }                 /* >= 100%          */
   .sig.mid  { background:#e0b43a; color:#3a2c00; }  /* 50–99%           */
   .sig.no   { background:#e8837a; }                 /* 0–49%            */
-  .sig.neg  { background:#c0362c; font-size:9px; }  /* captação negativa */
-  .sig.na   { background:transparent; color:#8a8272; font-size:12px; font-weight:700; letter-spacing:-1px; } /* fora da equipe */
+  .sig.neg  { background:#c0362c; font-size:14px; } /* captação negativa */
+  .sig.na   { background:transparent; color:#8a8272; font-size:20px; font-weight:800; letter-spacing:-1px; } /* fora da equipe */
   /* último mês em destaque, como no Brasileirão */
-  .sig.last { width:24px; height:24px; font-size:13px; box-shadow:0 0 0 2px #0000, 0 0 0 3px currentColor; }
-  .sig.ok.last  { color:#fff; box-shadow:0 0 0 2px rgba(0,0,0,.35), 0 0 0 4px #1fa55a; }
-  .sig.mid.last { color:#3a2c00; box-shadow:0 0 0 2px rgba(0,0,0,.35), 0 0 0 4px #e0b43a; }
-  .sig.no.last  { color:#fff; box-shadow:0 0 0 2px rgba(0,0,0,.35), 0 0 0 4px #e8837a; }
-  .sig.neg.last { color:#fff; font-size:11px; box-shadow:0 0 0 2px rgba(0,0,0,.35), 0 0 0 4px #c0362c; }
-  .sig.na.last  { box-shadow:none; font-size:14px; }
+  .sig.last { width:40px; height:40px; font-size:22px; margin-left:4px; }
+  .sig.ok.last  { color:#fff; box-shadow:0 0 0 3px #fff, 0 0 0 5px #1fa55a; }
+  .sig.mid.last { color:#3a2c00; box-shadow:0 0 0 3px #fff, 0 0 0 5px #e0b43a; }
+  .sig.no.last  { color:#fff; box-shadow:0 0 0 3px #fff, 0 0 0 5px #e8837a; }
+  .sig.neg.last { color:#fff; font-size:18px; box-shadow:0 0 0 3px #fff, 0 0 0 5px #c0362c; }
+  .sig.na.last  { box-shadow:none; font-size:24px; }
 
-  .form-legend { display:flex; gap:18px; justify-content:flex-end; align-items:center; flex-wrap:wrap;
-                 margin:12px 4px 0; font-size:12px; opacity:.75; }
-  .form-legend span { display:inline-flex; align-items:center; gap:6px; }
-  .form-legend .sig { width:14px; height:14px; font-size:9px; }
+  .form-legend { display:flex; gap:22px; justify-content:center; align-items:center; flex-wrap:wrap;
+                 margin:14px 4px 0; font-size:14px; opacity:.85; }
+  .form-legend span { display:inline-flex; align-items:center; gap:7px; }
+  .form-legend .sig { width:20px; height:20px; font-size:12px; }
+  .form-legend .sig.na { width:auto; font-size:14px; }
 </style>
 </head>
 <body>
@@ -52,7 +53,7 @@ const SHEET_ID  = '1IcGygIIk6TUQBf4Vcx-KOtD2RDK5y0dbAcELr_U6KBs';
 const TAB_NAME  = 'admin_total';
 const HIST_TAB  = 'hist_captacao';   // A=Assessor | B=Cluster | C=Filial | D..=meses (jan./26…) | Total | Média
 const NIVEIS    = ['Sênior', 'Pleno', 'Júnior'];
-const COLS_GRID = '5% 27% 18% 22% 28%';
+const COLS_GRID = '5% 25% 16% 28% 26%';
 const N_MESES   = 5;
 
 // Faixas (mesma régua do Quadro da Equipe)
