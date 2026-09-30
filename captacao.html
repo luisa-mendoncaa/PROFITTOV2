@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ranking Captação — PROFITTO</title>
-<link rel="stylesheet" href="style.css?v=5">
+<link rel="stylesheet" href="style.css?v=6">
 <style>
   /* ===== Mural de captação (dimensionado para TV · tema navy) ===== */
   .cap-mural .pct-cell { display:flex; align-items:center; gap:14px; padding-right:24px; }
@@ -21,16 +21,34 @@
          font-size:16px; font-weight:700; line-height:1; flex:0 0 auto; }
   .sig.ok   { background:#5fcf93; color:#06301b; }  /* >= 100%          */
   .sig.mid  { background:#f0c66e; color:#3a2a05; }  /* 50–99%           */
-  .sig.no   { background:#f3a39a; color:#4a1510; }  /* 0–49%            */
-  .sig.neg  { background:#e5564b; color:#fff; font-size:13px; } /* captação negativa */
+  .sig.no   { background:#f7b3aa; color:#5a1a12; }  /* 0–49%  → vermelho claro */
+  .sig.neg  { background:#8e1414; color:#ffd9d4; font-size:13px; } /* captação negativa → vermelho escuro */
   .sig.na   { background:transparent; color:#6f7fa3; font-size:20px; font-weight:600; letter-spacing:-1px; } /* fora da equipe */
   /* último mês em destaque */
   .sig.last { width:34px; height:34px; font-size:18px; margin-left:4px; }
   .sig.ok.last  { box-shadow:0 0 0 2px #0c1c3b, 0 0 0 4px #5fcf93; }
   .sig.mid.last { box-shadow:0 0 0 2px #0c1c3b, 0 0 0 4px #f0c66e; }
-  .sig.no.last  { box-shadow:0 0 0 2px #0c1c3b, 0 0 0 4px #f3a39a; }
-  .sig.neg.last { font-size:16px; box-shadow:0 0 0 2px #0c1c3b, 0 0 0 4px #e5564b; }
+  .sig.no.last  { box-shadow:0 0 0 2px #0c1c3b, 0 0 0 4px #f7b3aa; }
+  .sig.neg.last { font-size:16px; box-shadow:0 0 0 2px #0c1c3b, 0 0 0 4px #c43a33; }
   .sig.na.last  { box-shadow:none; font-size:24px; }
+
+  /* ===== Filtros ===== */
+  .cap-filtros { display:flex; align-items:center; gap:1.4vw; flex-wrap:wrap; margin:0 0 1.4vh; }
+  .cap-filtros .grp { display:flex; align-items:center; gap:.5vw; }
+  .cap-filtros .lbl { font-family:var(--f-display); font-size:1.25vh; letter-spacing:.16em; color:var(--ink-3); text-transform:uppercase; }
+  .cap-filtros input[type=search] { font:inherit; font-size:1.5vh; color:var(--ink); background:rgba(255,255,255,.05);
+      border:1px solid var(--line); border-radius:999px; padding:.7vh 1vw; width:14vw; min-width:160px; outline:none; }
+  .cap-filtros input[type=search]:focus { border-color:rgba(163,184,242,.55); }
+  .cap-filtros input[type=search]::placeholder { color:var(--ink-3); }
+  .chip { font-family:var(--f-display); font-size:1.35vh; color:var(--ink-2); background:transparent; cursor:pointer;
+          border:1px solid var(--line); border-radius:999px; padding:.55vh .8vw; display:inline-flex; align-items:center; gap:6px; }
+  .chip:hover { color:var(--ink); background:rgba(255,255,255,.05); }
+  .chip.on { color:var(--ink); background:rgba(163,184,242,.14); border-color:rgba(163,184,242,.45); }
+  .chip .dot { width:9px; height:9px; border-radius:50%; display:inline-block; }
+  .chip.limpar { border-style:dashed; color:var(--ink-3); margin-left:auto; }
+  .cap-count { font-size:1.3vh; color:var(--ink-3); }
+  .cap-mural .simple-row:not(.head) { max-height:7vh; }
+  .cap-vazio { padding:4vh; text-align:center; color:var(--ink-3); font-size:1.8vh; }
 
   .form-legend { display:flex; gap:22px; justify-content:center; align-items:center; flex-wrap:wrap;
                  margin:1.4vh 4px 0; font-size:1.35vh; color:var(--ink-2); }
@@ -42,12 +60,13 @@
 <body>
 <div class="wrap">
   <div id="navHost"></div>
+  <div id="filtrosHost"></div>
   <div id="content" class="simple-table barlist cap-mural"><div class="loading">Carregando dados da planilha…</div></div>
   <div id="legendHost"></div>
   <div class="footer">Fonte: PROFITTO_DAY_v2 · abas admin_total e hist_captacao · atualiza a cada 60s</div>
 </div>
 
-<script src="assets.js?v=5"></script>
+<script src="assets.js?v=6"></script>
 <script>
 const SHEET_ID  = '1IcGygIIk6TUQBf4Vcx-KOtD2RDK5y0dbAcELr_U6KBs';
 const TAB_NAME  = 'admin_total';
@@ -61,6 +80,51 @@ const LIM_BATIDA = 100;   // >= 100%      → verde ✓
 const LIM_MEIO   = 50;    // 50–99%       → amarelo –
                           // 0–49%        → vermelho claro ✕
                           // captação < 0 → vermelho ▼
+
+// ---------- filtros / ordenação (estado mantido entre atualizações) ----------
+const FILTRO_KEY = 'profitto_cap_filtros_v1';
+const estado = { busca:'', captado:'todos', faixa:'todas', sort:'total', dir:'desc' };
+try { Object.assign(estado, JSON.parse(localStorage.getItem(FILTRO_KEY) || '{}')); } catch (e) {}
+function salvarEstado() { try { localStorage.setItem(FILTRO_KEY, JSON.stringify(estado)); } catch (e) {} }
+let ultimoData = [], ultimoHist = { labels: [] };
+
+const OPC_CAPTADO = [['todos','Todos'], ['pos','Positiva'], ['neg','Negativa']];
+const OPC_FAIXA   = [['todas','Todas',null], ['ok','Bateu','#5fcf93'], ['mid','50–99%','#f0c66e'], ['no','< 50%','#f7b3aa'], ['neg','Negativa','#8e1414']];
+
+function mountFiltros() {
+  const host = document.getElementById('filtrosHost');
+  if (!host || host.dataset.ok) return;
+  host.dataset.ok = '1';
+  const chips = (grupo, opcs) => opcs.map(([v, t, c]) =>
+    '<button class="chip" data-g="' + grupo + '" data-v="' + v + '">' + (c ? '<i class="dot" style="background:' + c + '"></i>' : '') + t + '</button>').join('');
+  host.innerHTML = '<div class="cap-filtros">' +
+    '<div class="grp"><span class="lbl">Assessor</span><input type="search" id="fBusca" placeholder="Buscar nome…" autocomplete="off"></div>' +
+    '<div class="grp"><span class="lbl">Captado</span>' + chips('captado', OPC_CAPTADO) + '</div>' +
+    '<div class="grp"><span class="lbl">% da meta</span>' + chips('faixa', OPC_FAIXA) + '</div>' +
+    '<span class="cap-count" id="fCount"></span>' +
+    '<button class="chip limpar" id="fLimpar">Limpar filtros</button>' +
+  '</div>';
+  const busca = document.getElementById('fBusca');
+  busca.value = estado.busca;
+  busca.addEventListener('input', () => { estado.busca = busca.value; salvarEstado(); render(); });
+  host.addEventListener('click', ev => {
+    const b = ev.target.closest('.chip[data-g]');
+    if (!b) return;
+    estado[b.dataset.g] = b.dataset.v; salvarEstado(); render();
+  });
+  document.getElementById('fLimpar').addEventListener('click', () => {
+    Object.assign(estado, { busca:'', captado:'todos', faixa:'todas', sort:'total', dir:'desc' });
+    busca.value = ''; salvarEstado(); render();
+  });
+  document.getElementById('content').addEventListener('click', ev => {
+    const h = ev.target.closest('.sort-head');
+    if (!h) return;
+    const k = h.dataset.k;
+    if (estado.sort === k) estado.dir = estado.dir === 'desc' ? 'asc' : 'desc';
+    else { estado.sort = k; estado.dir = k === 'nome' ? 'asc' : 'desc'; }
+    salvarEstado(); render();
+  });
+}
 
 function mountCapTotalBadge() {
   const topbar = document.querySelector('.topbar');
@@ -111,7 +175,7 @@ function faixa(valor, meta) {
   if (p >= LIM_MEIO) return 'mid';
   return 'no';
 }
-const COR  = { ok:'#7fdca6', mid:'#f0c66e', no:'#f3a39a', neg:'#ff7b70', na:'#6f7fa3' };
+const COR  = { ok:'#7fdca6', mid:'#f0c66e', no:'#f7b3aa', neg:'#ff7b70', na:'#6f7fa3' };
 const ICON = { ok:'✓', mid:'–', no:'✕', neg:'▼', na:'--' };
 
 function signal(valor, meta, label, isLast) {
@@ -157,7 +221,73 @@ async function loadHistorico() {
   return out;
 }
 
-// ---------- render ----------
+// ---------- render (aplica filtros + ordenação sobre o último carregamento) ----------
+function render() {
+  const hist = ultimoHist;
+  const q = normName(estado.busca);
+  let data = ultimoData.filter(d =>
+    (!q || normName(d.nome).includes(q)) &&
+    (estado.captado === 'todos' || (estado.captado === 'pos' ? d.total >= 0 : d.total < 0)) &&
+    (estado.faixa === 'todas' || d.faixa === estado.faixa));
+  const k = estado.sort, m = estado.dir === 'asc' ? 1 : -1;
+  data = data.slice().sort((a, b) => k === 'nome'
+    ? m * a.nome.localeCompare(b.nome, 'pt-BR')
+    : m * ((a[k] - b[k]) || (a.rank - b.rank)));
+
+  document.querySelectorAll('#filtrosHost .chip[data-g]').forEach(b =>
+    b.classList.toggle('on', estado[b.dataset.g] === b.dataset.v));
+  const cnt = document.getElementById('fCount');
+  if (cnt) cnt.textContent = data.length === ultimoData.length ? '' : data.length + ' de ' + ultimoData.length;
+
+  const seta = key => estado.sort === key ? (estado.dir === 'asc' ? '▴' : '▾') : '▾';
+  const hd = (key, cls, txt, st) => '<div class="cell ' + cls + ' sort-head' + (estado.sort === key ? ' active' : '') +
+    '" data-k="' + key + '" title="Ordenar"' + (st ? ' style="' + st + '"' : '') + '>' + txt + '<span class="sort-arrow">' + seta(key) + '</span></div>';
+
+  let html = '<div class="simple-row head" style="grid-template-columns:' + COLS_GRID + '">' +
+    '<div class="cell pos-cell">#</div>' +
+    hd('nome', 'name-cell', 'ASSESSOR', 'justify-content:flex-start') +
+    hd('total', 'num-cell', 'CAPTADO') +
+    hd('pct', 'pct-cell', '% DA META') +
+    '<div class="cell form-cell">ÚLTIMOS 5 MESES</div>' +
+    '</div>';
+
+  data.forEach(d => {
+    const pos = d.rank;   // posição sempre pelo ranking de captação
+    const rankCls = pos === 1 ? ' gold' : pos === 2 ? ' silver' : pos === 3 ? ' bronze' : '';
+    const valCls  = d.total >= 0 ? 'pos-val' : 'neg-val';
+    const cor     = COR[d.faixa];
+    const largura = Math.max(0, Math.min(100, d.pct));
+    const sinais  = d.forma.map((v, k) => signal(v, d.meta, hist.labels[k], k === d.forma.length - 1)).join('');
+
+    html += '<div class="simple-row" style="grid-template-columns:' + COLS_GRID + '">' +
+      '<div class="cell pos-cell' + rankCls + '">' + pos + '</div>' +
+      '<div class="cell name-cell"><span class="nm">' + escHtml(d.nome) + '</span><span class="lvl">' + escHtml(d.nivel) + '</span></div>' +
+      '<div class="cell num-cell ' + valCls + '">' + fmtBRLShort(d.total) + '</div>' +
+      '<div class="cell pct-cell" title="Meta: ' + fmtBRLShort(d.meta) + '">' +
+        '<span class="pct-val" style="color:' + cor + '">' + (d.meta > 0 ? d.pct.toFixed(0) + '%' : '—') + '</span>' +
+        '<div class="pct-bar"><i style="width:' + largura + '%;background:' + cor + '"></i></div>' +
+      '</div>' +
+      '<div class="cell form-cell">' + sinais + '</div>' +
+      '</div>';
+  });
+  if (!data.length) html += '<div class="cap-vazio">Nenhum assessor com esses filtros.</div>';
+
+  const container = document.getElementById('content');
+  container.className = 'simple-table barlist cap-mural';
+  container.innerHTML = html;
+
+  document.getElementById('legendHost').innerHTML =
+    '<div class="form-legend">' +
+      '<span><i class="sig ok">✓</i> Bateu a meta (≥ ' + LIM_BATIDA + '%)</span>' +
+      '<span><i class="sig mid">–</i> ' + LIM_MEIO + '% a ' + (LIM_BATIDA - 1) + '% da meta</span>' +
+      '<span><i class="sig no">✕</i> Abaixo de ' + LIM_MEIO + '%</span>' +
+      '<span><i class="sig neg">▼</i> Captação negativa</span>' +
+      '<span><i class="sig na">--</i> Fora da equipe</span>' +
+      (hist.labels.length ? '<span>Meses fechados · ' + escHtml(hist.labels[0]) + ' → ' + escHtml(hist.labels[hist.labels.length - 1]) + '</span>' : '') +
+    '</div>';
+}
+
+// ---------- carregamento ----------
 async function load() {
   try {
     mountCapTotalBadge();
@@ -179,6 +309,8 @@ async function load() {
       data.push({ nome, nivel, total, meta, pct, forma });
     }
     data.sort((a, b) => b.total - a.total);
+    data.forEach((d, i) => { d.rank = i + 1; d.faixa = faixa(d.total, d.meta); });
+    ultimoData = data; ultimoHist = hist;
 
     const capTotalEl = document.getElementById('capTotal');
     if (capTotalEl) {
@@ -186,48 +318,8 @@ async function load() {
       capTotalEl.style.color = capTotal >= 0 ? '#ffffff' : '#ffd0cb';
     }
 
-    const container = document.getElementById('content');
-    container.className = 'simple-table barlist cap-mural';
-
-    let html = '<div class="simple-row head" style="grid-template-columns:' + COLS_GRID + '">' +
-      '<div class="cell pos-cell">#</div>' +
-      '<div class="cell name-cell">ASSESSOR</div>' +
-      '<div class="cell num-cell">CAPTADO</div>' +
-      '<div class="cell pct-cell">% DA META</div>' +
-      '<div class="cell form-cell">ÚLTIMOS 5 MESES</div>' +
-      '</div>';
-
-    data.forEach((d, i) => {
-      const pos = i + 1;
-      const rankCls = pos === 1 ? ' gold' : pos === 2 ? ' silver' : pos === 3 ? ' bronze' : '';
-      const valCls  = d.total >= 0 ? 'pos-val' : 'neg-val';
-      const cor     = COR[faixa(d.total, d.meta)];
-      const largura = Math.max(0, Math.min(100, d.pct));
-      const sinais  = d.forma.map((v, k) => signal(v, d.meta, hist.labels[k], k === d.forma.length - 1)).join('');
-
-      html += '<div class="simple-row" style="grid-template-columns:' + COLS_GRID + '">' +
-        '<div class="cell pos-cell' + rankCls + '">' + pos + '</div>' +
-        '<div class="cell name-cell"><span class="nm">' + escHtml(d.nome) + '</span><span class="lvl">' + escHtml(d.nivel) + '</span></div>' +
-        '<div class="cell num-cell ' + valCls + '">' + fmtBRLShort(d.total) + '</div>' +
-        '<div class="cell pct-cell" title="Meta: ' + fmtBRLShort(d.meta) + '">' +
-          '<span class="pct-val" style="color:' + cor + '">' + (d.meta > 0 ? d.pct.toFixed(0) + '%' : '—') + '</span>' +
-          '<div class="pct-bar"><i style="width:' + largura + '%;background:' + cor + '"></i></div>' +
-        '</div>' +
-        '<div class="cell form-cell">' + sinais + '</div>' +
-        '</div>';
-    });
-
-    container.innerHTML = html;
-
-    document.getElementById('legendHost').innerHTML =
-      '<div class="form-legend">' +
-        '<span><i class="sig ok">✓</i> Bateu (≥ ' + LIM_BATIDA + '%)</span>' +
-        '<span><i class="sig mid">–</i> ' + LIM_MEIO + '–' + (LIM_BATIDA - 1) + '%</span>' +
-        '<span><i class="sig no">✕</i> Abaixo de ' + LIM_MEIO + '%</span>' +
-        '<span><i class="sig neg">▼</i> Captação negativa</span>' +
-        '<span><i class="sig na">--</i> Fora da equipe</span>' +
-        (hist.labels.length ? '<span>Meses fechados · ' + escHtml(hist.labels[0]) + ' → ' + escHtml(hist.labels[hist.labels.length - 1]) + '</span>' : '') +
-      '</div>';
+    mountFiltros();
+    render();
 
     try {
       const stamp = await fetchSheetCell(SHEET_ID, TAB_NAME, 'H1', 8000);
