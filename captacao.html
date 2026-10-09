@@ -17,20 +17,21 @@
   .cap-mural .head .form-cell,
   .cap-mural .head .pct-cell { justify-content:center; padding-right:0; }
 
-  .sig { width:30px; height:30px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center;
-         font-size:16px; font-weight:700; line-height:1; flex:0 0 auto; }
-  .sig.ok   { background:#5fcf93; color:#06301b; }  /* >= 100%          */
-  .sig.mid  { background:#f0c66e; color:#3a2a05; }  /* 50–99%           */
-  .sig.no   { background:#f7b3aa; color:#5a1a12; }  /* 0–49%  → vermelho claro */
-  .sig.neg  { background:#8e1414; color:#ffd9d4; font-size:13px; } /* captação negativa → vermelho escuro */
-  .sig.na   { background:transparent; color:#6f7fa3; font-size:20px; font-weight:600; letter-spacing:-1px; } /* fora da equipe */
-  /* último mês em destaque */
-  .sig.last { width:34px; height:34px; font-size:18px; margin-left:4px; }
-  .sig.ok.last  { box-shadow:0 0 0 2px #0c1c3b, 0 0 0 4px #5fcf93; }
-  .sig.mid.last { box-shadow:0 0 0 2px #0c1c3b, 0 0 0 4px #f0c66e; }
-  .sig.no.last  { box-shadow:0 0 0 2px #0c1c3b, 0 0 0 4px #f7b3aa; }
-  .sig.neg.last { font-size:16px; box-shadow:0 0 0 2px #0c1c3b, 0 0 0 4px #c43a33; }
-  .sig.na.last  { box-shadow:none; font-size:24px; }
+  /* ===== Últimos meses: mapa de calor (mesma régua do quadro de captação) ===== */
+  .heat { display:flex; gap:5px; flex:1; min-width:0; }
+  .tile { flex:1; min-width:0; border-radius:6px; padding:.45vh .2vw; display:flex; flex-direction:column;
+          align-items:center; justify-content:center; line-height:1.15; }
+  .tile .m { font-size:1.05vh; letter-spacing:.08em; text-transform:uppercase; opacity:.7; }
+  .tile .v { font-family:var(--f-display); font-size:1.55vh; font-weight:600; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .tile.last { outline:2px solid rgba(255,255,255,.85); outline-offset:1px; }
+  .tile.na { border:1px dashed rgba(255,255,255,.15); }
+
+  /* placar: metas batidas e sequência */
+  .score { display:flex; flex-direction:column; align-items:center; gap:4px; min-width:3.8vw; }
+  .pill { font-family:var(--f-display); font-size:1.25vh; font-weight:700; border-radius:999px; padding:.3vh .55vw;
+          white-space:nowrap; background:rgba(255,255,255,.08); color:var(--ink-2); font-variant-numeric:tabular-nums; }
+  .pill.hot { background:#3aa874; color:#fff; }
+  .pill.seq { background:#f0c95f; color:#3a2a05; }
 
   /* ===== Filtros ===== */
   .cap-filtros { display:flex; align-items:center; gap:1.4vw; flex-wrap:wrap; margin:0 0 1.4vh; }
@@ -53,8 +54,7 @@
   .form-legend { display:flex; gap:22px; justify-content:center; align-items:center; flex-wrap:wrap;
                  margin:1.4vh 4px 0; font-size:1.35vh; color:var(--ink-2); }
   .form-legend span { display:inline-flex; align-items:center; gap:7px; }
-  .form-legend .sig { width:20px; height:20px; font-size:11px; }
-  .form-legend .sig.na { width:auto; font-size:14px; }
+  .form-legend .sw { width:34px; height:12px; border-radius:3px; display:inline-block; }
 </style>
 </head>
 <body>
@@ -70,16 +70,16 @@
 <script>
 const SHEET_ID  = '1IcGygIIk6TUQBf4Vcx-KOtD2RDK5y0dbAcELr_U6KBs';
 const TAB_NAME  = 'admin_total';
-const HIST_TAB  = 'hist_captacao';   // A=Assessor | B=Cluster | C=Filial | D..=meses (jan./26…) | Total | Média
+const HIST_TAB  = 'hist_captacao';   // A=Assessor | B=Cluster | C=Filial | D..=meses (Jan/2026…) | Total | Média
 const NIVEIS    = ['Sênior', 'Pleno', 'Júnior'];
-const COLS_GRID = '5% 25% 16% 28% 26%';
+const COLS_GRID = '5% 21% 13% 22% 39%';
 const N_MESES   = 5;
 
-// Faixas (mesma régua do Quadro da Equipe)
-const LIM_BATIDA = 100;   // >= 100%      → verde ✓
-const LIM_MEIO   = 50;    // 50–99%       → amarelo –
-                          // 0–49%        → vermelho claro ✕
-                          // captação < 0 → vermelho ▼
+// Faixas (mesma régua do quadro de captação)
+const LIM_BATIDA = 100;   // >= 100%          → verde
+const LIM_MEIO   = 50;    // 50–99%           → amarelo
+                          // 0–49%            → vermelho claro
+                          // ≤ 0 no mês       → vermelho
 
 // ---------- filtros / ordenação (estado mantido entre atualizações) ----------
 const FILTRO_KEY = 'profitto_cap_filtros_v1';
@@ -137,7 +137,7 @@ function mountCapTotalBadge() {
 }
 
 // ---------- helpers ----------
-const normName = s => (s || '').toString().normalize('NFD').replace(/[̀-ͯ]/g, '')
+const normName = s => (s || '').toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
   .replace(/\(.*?\)/g, '').trim().toLowerCase().replace(/\s+/g, ' ');
 const escHtml  = s => (s || '').toString().replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
 
@@ -161,12 +161,16 @@ function sameAssessor(curto, completo) {
 }
 
 const MESES_PT = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
-function mesAtualLabel() {
-  const d = new Date();
-  return MESES_PT[d.getMonth()] + './' + String(d.getFullYear()).slice(-2);
+// Chave única de mês: "jan./26", "Jan/2026", "janeiro 2026" → "jan26"
+function chaveMes(s) {
+  const t = normName(s);
+  const m = MESES_PT.findIndex(x => t.startsWith(x));
+  const y = (t.match(/(\d{2,4})\s*$/) || [])[1];
+  return (m < 0 || !y) ? t : MESES_PT[m] + y.slice(-2);
 }
-const normLabel = s => (s || '').toString().trim().toLowerCase();
+const chaveMesAtual = () => { const d = new Date(); return MESES_PT[d.getMonth()] + String(d.getFullYear()).slice(-2); };
 
+// faixa do total do mês corrente (coluna % DA META)
 function faixa(valor, meta) {
   if (valor === null) return 'na';
   if (valor < 0) return 'neg';
@@ -175,14 +179,48 @@ function faixa(valor, meta) {
   if (p >= LIM_MEIO) return 'mid';
   return 'no';
 }
-const COR  = { ok:'#7fdca6', mid:'#f0c66e', no:'#f7b3aa', neg:'#ff7b70', na:'#6f7fa3' };
-const ICON = { ok:'✓', mid:'–', no:'✕', neg:'▼', na:'--' };
+// faixa de um mês fechado: igual ao quadro — zerado conta como vermelho
+function faixaMes(valor, meta) {
+  if (valor === null) return 'na';
+  if (valor <= 0) return 'neg';
+  return faixa(valor, meta);
+}
+const COR = { ok:'#7fdca6', mid:'#f0c66e', no:'#f7b3aa', neg:'#ff7b70', na:'#6f7fa3' };
 
-function signal(valor, meta, label, isLast) {
-  const f = faixa(valor, meta);
-  const tip = f === 'na' ? label + ': fora da equipe'
-    : label + ': ' + fmtBRLShort(valor) + (meta > 0 ? ' · ' + (valor / meta * 100).toFixed(0) + '% da meta' : '');
-  return '<span class="sig ' + f + (isLast ? ' last' : '') + '" title="' + escHtml(tip) + '">' + ICON[f] + '</span>';
+// Gradiente do quadro: quanto mais perto do limite de cima da faixa, mais claro; acima da meta, mais forte
+const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+function mix(a, b, t) {
+  t = Math.max(0, Math.min(1, t));
+  const A = hex(a), B = hex(b);
+  return 'rgb(' + A.map((x, i) => Math.round(x + (B[i] - x) * t)).join(',') + ')';
+}
+function heat(valor, meta) {
+  const f = faixaMes(valor, meta);
+  const p = meta > 0 && valor !== null ? valor / meta * 100 : 0;
+  if (f === 'na')  return { f, bg:'transparent', fg:'#6f7fa3' };
+  if (f === 'neg') return { f, bg:'#c9564a', fg:'#ffffff' };
+  if (f === 'no')  { const t = p / LIM_MEIO;                         return { f, bg:mix('#d5675b', '#fbe6e3', t), fg: t < .45 ? '#ffffff' : '#6b1d14' }; }
+  if (f === 'mid') { const t = (p - LIM_MEIO) / (LIM_BATIDA - LIM_MEIO); return { f, bg:mix('#f0c95f', '#fbf3d8', t), fg:'#4a3606' }; }
+  const t = (p - LIM_BATIDA) / 100;                                    // 100% → 200%+
+  return { f, bg:mix('#d6f0e2', '#3aa874', t), fg: t > .55 ? '#ffffff' : '#0d3b24' };
+}
+
+function tile(valor, meta, label, isLast) {
+  const h = heat(valor, meta);
+  const mes = (label || '').toString().slice(0, 3).toUpperCase();
+  const tip = h.f === 'na' ? label + ': fora da equipe'
+    : label + ': ' + fmtBRL(valor) + (meta > 0 ? ' · ' + (valor / meta * 100).toFixed(0) + '% da meta (' + fmtBRLShort(meta) + ')' : '');
+  return '<div class="tile ' + h.f + (isLast ? ' last' : '') + '" style="background:' + h.bg + ';color:' + h.fg + '" title="' + escHtml(tip) + '">' +
+    '<span class="m">' + escHtml(mes) + '</span><span class="v">' + (valor === null ? '--' : fmtBRLShort(valor)) + '</span></div>';
+}
+
+// placar: metas batidas na janela + sequência atual (meses seguidos batendo, contando do mais recente)
+function placar(forma, meta) {
+  const f = forma.map(v => faixaMes(v, meta));
+  const hits = f.filter(x => x === 'ok').length;
+  let seq = 0;
+  for (let i = f.length - 1; i >= 0 && f[i] === 'ok'; i--) seq++;
+  return { hits, seq };
 }
 
 // Lê hist_captacao e devolve os 5 últimos meses FECHADOS (antes do mês corrente)
@@ -202,7 +240,7 @@ async function loadHistorico() {
     }
     // mês corrente fica de fora (está em andamento)
     let fim = lastCol;
-    const idxAtual = hdr.findIndex((h, i) => i >= firstCol && i < lastCol && normLabel(h) === mesAtualLabel());
+    const idxAtual = hdr.findIndex((h, i) => i >= firstCol && i < lastCol && chaveMes(h) === chaveMesAtual());
     if (idxAtual >= 0) fim = idxAtual;
     const ini = Math.max(firstCol, fim - N_MESES);
     const cols = [];
@@ -232,7 +270,7 @@ function render() {
   const k = estado.sort, m = estado.dir === 'asc' ? 1 : -1;
   data = data.slice().sort((a, b) => k === 'nome'
     ? m * a.nome.localeCompare(b.nome, 'pt-BR')
-    : m * ((a[k] - b[k]) || (a.rank - b.rank)));
+    : m * ((a[k] - b[k]) || (k === 'hits' ? a.seq - b.seq : 0)) || (a.rank - b.rank));
 
   document.querySelectorAll('#filtrosHost .chip[data-g]').forEach(b =>
     b.classList.toggle('on', estado[b.dataset.g] === b.dataset.v));
@@ -248,7 +286,7 @@ function render() {
     hd('nome', 'name-cell', 'ASSESSOR', 'justify-content:flex-start') +
     hd('total', 'num-cell', 'CAPTADO') +
     hd('pct', 'pct-cell', '% DA META') +
-    '<div class="cell form-cell">ÚLTIMOS 5 MESES</div>' +
+    hd('hits', 'form-cell', 'ÚLTIMOS ' + N_MESES + ' MESES') +
     '</div>';
 
   data.forEach(d => {
@@ -257,7 +295,12 @@ function render() {
     const valCls  = d.total >= 0 ? 'pos-val' : 'neg-val';
     const cor     = COR[d.faixa];
     const largura = Math.max(0, Math.min(100, d.pct));
-    const sinais  = d.forma.map((v, k) => signal(v, d.meta, hist.labels[k], k === d.forma.length - 1)).join('');
+    const tiles   = d.forma.map((v, i) => tile(v, d.meta, hist.labels[i], i === d.forma.length - 1)).join('');
+    const n       = d.forma.length;
+    const score   = '<div class="score">' +
+      '<span class="pill' + (d.hits >= Math.ceil(n / 2) ? ' hot' : '') + '" title="Metas batidas nos últimos ' + n + ' meses">' + d.hits + '/' + n + '</span>' +
+      (d.seq >= 2 ? '<span class="pill seq" title="Meses seguidos batendo a meta">SEQ ' + d.seq + '</span>' : '') +
+      '</div>';
 
     html += '<div class="simple-row" style="grid-template-columns:' + COLS_GRID + '">' +
       '<div class="cell pos-cell' + rankCls + '">' + pos + '</div>' +
@@ -267,7 +310,7 @@ function render() {
         '<span class="pct-val" style="color:' + cor + '">' + (d.meta > 0 ? d.pct.toFixed(0) + '%' : '—') + '</span>' +
         '<div class="pct-bar"><i style="width:' + largura + '%;background:' + cor + '"></i></div>' +
       '</div>' +
-      '<div class="cell form-cell">' + sinais + '</div>' +
+      '<div class="cell form-cell"><div class="heat">' + tiles + '</div>' + score + '</div>' +
       '</div>';
   });
   if (!data.length) html += '<div class="cap-vazio">Nenhum assessor com esses filtros.</div>';
@@ -276,13 +319,14 @@ function render() {
   container.className = 'simple-table barlist cap-mural';
   container.innerHTML = html;
 
+  const sw = bg => '<i class="sw" style="background:' + bg + '"></i>';
   document.getElementById('legendHost').innerHTML =
     '<div class="form-legend">' +
-      '<span><i class="sig ok">✓</i> Bateu a meta (≥ ' + LIM_BATIDA + '%)</span>' +
-      '<span><i class="sig mid">–</i> ' + LIM_MEIO + '% a ' + (LIM_BATIDA - 1) + '% da meta</span>' +
-      '<span><i class="sig no">✕</i> Abaixo de ' + LIM_MEIO + '%</span>' +
-      '<span><i class="sig neg">▼</i> Captação negativa</span>' +
-      '<span><i class="sig na">--</i> Fora da equipe</span>' +
+      '<span>' + sw('linear-gradient(90deg,#d6f0e2,#3aa874)') + ' bateu a meta · 100% ou mais</span>' +
+      '<span>' + sw('linear-gradient(90deg,#f0c95f,#fbf3d8)') + ' 50% a 99% da meta</span>' +
+      '<span>' + sw('linear-gradient(90deg,#d5675b,#fbe6e3)') + ' abaixo de 50%</span>' +
+      '<span>' + sw('#c9564a') + ' captação negativa ou zerada no mês</span>' +
+      '<span><b>n/' + N_MESES + '</b> metas batidas · <b>SEQ</b> meses seguidos batendo</span>' +
       (hist.labels.length ? '<span>Meses fechados · ' + escHtml(hist.labels[0]) + ' → ' + escHtml(hist.labels[hist.labels.length - 1]) + '</span>' : '') +
     '</div>';
 }
@@ -300,13 +344,14 @@ async function load() {
       const nome  = (r[1] || '').trim();
       if (!NIVEIS.includes(nivel) || !nome) continue;
       const total = parseNumBR(r[5]);
-      const meta  = parseNumBR(r[7]);
+      const meta  = parseNumBR(r[7]);   // meta individual do assessor
       capTotal += total;
       if (hist.inativos.some(x => sameAssessor(nome, x))) continue;   // marcado (inativo) na hist_captacao
       const pct   = meta > 0 ? (total / meta) * 100 : 0;
       const h = hist.rows.find(x => sameAssessor(nome, x.nome));
       const forma = h ? h.valores : hist.labels.map(() => null);
-      data.push({ nome, nivel, total, meta, pct, forma });
+      const { hits, seq } = placar(forma, meta);
+      data.push({ nome, nivel, total, meta, pct, forma, hits, seq });
     }
     data.sort((a, b) => b.total - a.total);
     data.forEach((d, i) => { d.rank = i + 1; d.faixa = faixa(d.total, d.meta); });
