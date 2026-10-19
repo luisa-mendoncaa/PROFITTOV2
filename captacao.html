@@ -23,7 +23,7 @@
   .sig.ok  { background:#2fa864; }   /* >= 100%  */
   .sig.mid { background:#e6b52e; }   /* 50–99%   */
   .sig.no  { background:#d64a3c; }   /* < 50% (inclui negativa e zerada) */
-  .sig.na  { background:#8a93a6; }   /* fora da equipe */
+  .sig.na  { background:#8a93a6; }   /* ainda não estava na equipe */
   .sig.last { width:36px; height:36px; font-size:19px; box-shadow:0 0 0 2px #0c1c3b, 0 0 0 4px currentColor; }
   .sig.ok.last  { box-shadow:0 0 0 2px #0c1c3b, 0 0 0 4px #2fa864; }
   .sig.mid.last { box-shadow:0 0 0 2px #0c1c3b, 0 0 0 4px #e6b52e; }
@@ -70,7 +70,7 @@ const TAB_NAME  = 'admin_total';
 const HIST_TAB  = 'hist_captacao';   // A=Assessor | B=Cluster | C=Filial | D..=meses (Jan/2026…) | Total | Média
 const NIVEIS    = ['Sênior', 'Pleno', 'Júnior'];
 const COLS_GRID = '5% 25% 16% 28% 26%';
-const N_MESES   = 5;
+const N_MESES   = 5;   // 4 fechados + mês corrente
 
 // Régua: verde >= 100% · amarelo 50–99% · vermelho < 50% (negativa e zerada também)
 const LIM_BATIDA = 100;
@@ -187,45 +187,62 @@ const ICON = { ok:'✓', mid:'–', no:'✕', na:'–' };
 
 function signal(valor, meta, label, isLast) {
   const f = faixaMes(valor, meta);
-  const tip = f === 'na' ? label + ': fora da equipe'
+  const tip = f === 'na' ? label + ': sem captação (ainda não estava na equipe)'
     : label + ': ' + fmtBRL(valor) + (meta > 0 ? ' · ' + (valor / meta * 100).toFixed(0) + '% da meta' : '');
   return '<span class="sig ' + f + (isLast ? ' last' : '') + '" title="' + escHtml(tip) + '">' + ICON[f] + '</span>';
 }
 
-// Lê hist_captacao e devolve os 5 últimos meses FECHADOS (antes do mês corrente)
-async function loadHistorico() {
-  const out = { rows: [], labels: [], inativos: [] };
-  try {
-    const rows = await fetchSheetRows(SHEET_ID, HIST_TAB);
-    let hdr = rows.find(r => normName(r[0]) === 'assessor');
-    let firstCol = 3, lastCol;
-    if (hdr) {
-      lastCol = hdr.findIndex((h, i) => i >= firstCol && ['total', 'media'].includes(normName(h)));
-      if (lastCol < 0) lastCol = hdr.length;
-    } else {                                         // sem cabeçalho: assume jan..mês atual
-      lastCol = firstCol + new Date().getMonth() + 1;
-      hdr = [];
-      for (let i = firstCol; i < lastCol; i++) hdr[i] = MESES_PT[i - firstCol] + './' + String(new Date().getFullYear()).slice(-2);
-    }
-    // mês corrente fica de fora (está em andamento)
-    let fim = lastCol;
-    const idxAtual = hdr.findIndex((h, i) => i >= firstCol && i < lastCol && chaveMes(h) === chaveMesAtual());
-    if (idxAtual >= 0) fim = idxAtual;
-    const ini = Math.max(firstCol, fim - N_MESES);
-    const cols = [];
-    for (let i = ini; i < fim; i++) cols.push(i);
-    out.labels = cols.map(i => (hdr[i] || '').toString().trim());
+// ===== Meses FECHADOS: base = tabela de captação mensal (painel branco) =====
+// A aba hist_captacao está desalinhada (a coluna "set./26" traz o valor de OUTUBRO e
+// setembro some para vários assessores). Até ela ser corrigida, os meses fechados
+// vêm desta tabela. Para virar o mês: acrescente a coluna nova e remova a mais antiga.
+// Ordem dos valores = ordem de MESES_FECHADOS. 0 antes do 1º mês com captação = "ainda não estava".
+const MESES_FECHADOS = ['jun./26', 'jul./26', 'ago./26', 'set./26'];
+const HIST_FECHADO = [
+  ['Andreus Machado Goncalves',          [  2098168,   108003, -1395085,  1462587]],
+  ['Romano Avila Santos',                [   808420,   441012,  3715291,  1943204]],
+  ['Guilherme Wagner Ribas',             [        0,        0,  5522540,  1522452]],
+  ['Luiz Matarazzo Silva Junior',        [        0,        0,        0,  5946924]],
+  ['Gabriel Henrique Fornari Bonassi',   [   -14605,   341938,  -178891,  2535872]],
+  ['Cleison Luiz Arenhart',              [  1437703,  1363033,  2036641, -3238489]],
+  ['Pamela Ynae Rosa dos Santos',        [   496716,   944126,   571126,   441995]],
+  ['Pedro Chaves Dalmaso',               [   145072,   -43826,   733229,  1145963]],
+  ['Erik Castro Pergher',                [  -258766,   323757,  -710649,  1970683]],
+  ['Pedro Henrique Santos Araujo',       [        0,        0,        0,   619616]],
+  ['Ricardo Figueira Guimaraes',         [    47636,  1207895,   678313,   559546]],
+  ['Gilvan Farias dos Santos',           [        0,        0,        0,        0]],
+  ['Gabriel Turcatti Lorandi',           [        0,        0,    12517,     7296]],
+  ['Mari Silvia Nienow Nichele',         [  -279325,  -539116,   498313,   -45535]],
+  ['Diogo Possebon Carvalho',            [  5062379,  1279234,   575622, -1667458]],
+  ['Andre Cristiano Capitanio Jocksch',  [  1713159,  2162111,   510633,  1803556]],
+];
+// "(inativo)" na hist_captacao continua valendo para esconder quem saiu
+const INATIVOS_EXTRA = [];
 
+function labelMesAtual() {
+  const d = new Date();
+  return MESES_PT[d.getMonth()] + './' + String(d.getFullYear()).slice(-2);
+}
+
+async function loadHistorico() {
+  const out = { rows: [], labels: MESES_FECHADOS.concat([labelMesAtual() + ' (em curso)']), inativos: INATIVOS_EXTRA.slice() };
+  out.rows = HIST_FECHADO.map(([nome, valores]) => ({ nome, valores: valores.slice() }));
+  try {   // só para ler quem está marcado (inativo)
+    const rows = await fetchSheetRows(SHEET_ID, HIST_TAB);
     for (const r of rows) {
       const nome = (r[0] || '').toString().trim();
-      if (!nome || r === hdr) continue;
-      if (/inativo/i.test(nome)) { out.inativos.push(nome); continue; }
-      out.rows.push({ nome, valores: cols.map(i => parseMoney(r[i])) });
+      if (/inativo/i.test(nome)) out.inativos.push(nome);
     }
-  } catch (e) {
-    console.warn('Histórico indisponível:', e.message);
-  }
+  } catch (e) { console.warn('hist_captacao indisponível:', e.message); }
   return out;
+}
+
+// Monta as 5 bolinhas: 4 fechadas + mês corrente (CAPTADO do admin_total).
+// Zeros antes do primeiro mês com captação viram cinza ("ainda não estava na equipe").
+function montarForma(fechados, totalAtual) {
+  const v = fechados.concat([totalAtual]);
+  const ini = v.findIndex(x => x !== null && x !== 0);
+  return v.map((x, i) => (ini < 0 || i < ini) && i < v.length - 1 ? null : x);
 }
 
 // ---------- render (aplica filtros + ordenação sobre o último carregamento) ----------
@@ -288,7 +305,8 @@ function render() {
       '<span><i class="sig ok">✓</i> Bateu a meta (100% ou mais)</span>' +
       '<span><i class="sig mid">–</i> 50% a 99% da meta</span>' +
       '<span><i class="sig no">✕</i> Abaixo de 50%</span>' +
-      (hist.labels.length ? '<span>Meses fechados · ' + escHtml(hist.labels[0]) + ' → ' + escHtml(hist.labels[hist.labels.length - 1]) + ' (último em destaque)</span>' : '') +
+      '<span><i class="sig na">–</i> Ainda não estava na equipe</span>' +
+      '<span>' + escHtml(hist.labels[0]) + ' → ' + escHtml(hist.labels[hist.labels.length - 1]) + ' (mês corrente em destaque)</span>' +
     '</div>';
 }
 
@@ -310,7 +328,7 @@ async function load() {
       if (hist.inativos.some(x => sameAssessor(nome, x))) continue;   // marcado (inativo) na hist_captacao
       const pct   = meta > 0 ? (total / meta) * 100 : 0;
       const h = hist.rows.find(x => sameAssessor(nome, x.nome));
-      const forma = h ? h.valores : hist.labels.map(() => null);
+      const forma = montarForma(h ? h.valores : MESES_FECHADOS.map(() => null), total);
       data.push({ nome, nivel, total, meta, pct, forma });
     }
     data.sort((a, b) => b.total - a.total);
